@@ -26,6 +26,10 @@ export function staticIconUrl(pixels: StaticIconPixels = 64): string {
   return `${ICON_BASE}icon-${pixels}.png`;
 }
 
+export function iconCycleGifUrl(): string {
+  return `${ICON_BASE}icon-cycle.gif`;
+}
+
 export function displayPixelsForSize(size: SiteIconSize): number {
   switch (size) {
     case 'nav':

@@ -1,15 +1,21 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
-import '../../organisms/site-icon/site-icon.js';
+import { publishQaHeaderProgress } from '../../molecules/qa-header-bridge/qaHeaderBridge.js';
+import { renderQaCaseIcon } from '../../molecules/qa-case-icon/qaCaseIcon.js';
 import type { QaCatalog, QaCase } from '../../molecules/qa-session/qaSessionTypes.js';
 import { QaSessionStore } from '../../molecules/qa-session/qaSessionStore.js';
 import { filterCases } from '../../molecules/qa-filter/filterCases.js';
 import { countReviewed } from '../../molecules/progress-summary/countReviewed.js';
+import { buildSuiteTooltipRows, computeVerdictBreakdown } from '../../molecules/progress-summary/computeVerdictBreakdown.js';
+import { renderProgressRing, renderSuiteMeter } from '../../molecules/progress-summary/progressRingView.js';
+import { bindViewportTooltips } from '../../molecules/viewport-tooltip/bindViewportTooltips.js';
 import { exportQaCsv, exportQaJson, importQaCsv } from '../../molecules/csv-exchange/csvExchange.js';
 import {
   computeSuiteStats,
   getSuiteMeta,
   phasesWithSuites,
 } from '../../molecules/qa-catalog/suiteCatalog.js';
+
+type QaMobilePanel = 'suites' | 'cases' | 'detail';
 
 export class AlloysQaRunner extends HTMLElement {
   private store!: QaSessionStore;
@@ -18,6 +24,8 @@ export class AlloysQaRunner extends HTMLElement {
   private search = '';
   private alloy = '';
   private verdict = '';
+  private mobilePanel: QaMobilePanel = 'cases';
+  private tooltipCleanup?: () => void;
 
   setStore(store: QaSessionStore) {
     this.store = store;
@@ -34,7 +42,183 @@ export class AlloysQaRunner extends HTMLElement {
 
   connectedCallback() {
     this.className = 'qa-shell';
+    if (!this.dataset.actionsBound) {
+      this.dataset.actionsBound = 'true';
+      this.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+        const actionButton = target.closest<HTMLButtonElement>('[data-action]');
+
+        if (actionButton?.dataset.action === 'menu') {
+          event.stopPropagation();
+          const menu = actionButton.closest('.actions-menu');
+          const panel = menu?.querySelector('.actions-menu__panel');
+          const willOpen = !panel?.classList.contains('open');
+          this.closeActionsMenu();
+          if (willOpen) panel?.classList.add('open');
+          actionButton.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+          return;
+        }
+
+        if (actionButton?.closest('.actions-menu__panel')) {
+          event.stopPropagation();
+          this.closeActionsMenu();
+          this.handleMenuAction(actionButton.dataset.action ?? '');
+          return;
+        }
+
+        if (!target.closest('.actions-menu')) {
+          this.closeActionsMenu();
+        }
+      });
+    }
     this.render();
+  }
+
+  disconnectedCallback() {
+    this.tooltipCleanup?.();
+    this.tooltipCleanup = undefined;
+  }
+
+  private closeActionsMenu() {
+    this.querySelectorAll('.actions-menu__panel').forEach((panel) => panel.classList.remove('open'));
+    this.querySelectorAll<HTMLButtonElement>('[data-action="menu"]').forEach((button) => {
+      button.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  private renderActionsMenu(modifier: 'nav' | 'mobile') {
+    return `
+      <div class="actions-menu actions-menu--${modifier}">
+        <button type="button" class="btn btn--sm actions-menu__trigger" data-action="menu" aria-haspopup="menu" aria-expanded="false">Actions</button>
+        <div class="actions-menu__panel" role="menu">
+          <button type="button" role="menuitem" data-action="export-csv">Export CSV</button>
+          <button type="button" role="menuitem" data-action="export-json">Export JSON</button>
+          <button type="button" role="menuitem" data-action="import-csv">Import CSV</button>
+          <button type="button" role="menuitem" data-action="import-json">Import JSON</button>
+          <button type="button" role="menuitem" data-action="tester">Set tester name</button>
+          <button type="button" role="menuitem" data-action="reset">Reset progress</button>
+        </div>
+      </div>
+    `;
+  }
+
+  private handleMenuAction(action: string) {
+    if (!this.catalog || !this.store) return;
+    const cases = this.catalog.cases;
+
+    switch (action) {
+      case 'export-csv': {
+        const session = this.store.getSession();
+        const reviewed = countReviewed(cases, session.progress);
+        this.download('alloys-qa.csv', exportQaCsv(this.catalog.datapack_version, cases, session, reviewed), 'text/csv');
+        break;
+      }
+      case 'export-json': {
+        const session = this.store.getSession();
+        const reviewed = countReviewed(cases, session.progress);
+        this.download('alloys-qa.json', JSON.stringify(exportQaJson(this.catalog.datapack_version, cases, session, reviewed), null, 2), 'application/json');
+        break;
+      }
+      case 'import-csv':
+        this.openImport('.csv,text/csv', async (text) => {
+          this.store.mergeImport(importQaCsv(text, new Set(cases.map((c) => c.id))));
+        });
+        break;
+      case 'import-json':
+        this.openImport('.json,application/json', async (text) => {
+          const data = JSON.parse(text);
+          this.store.mergeImport({ tester_name: data.tester_name, progress: data.progress });
+        });
+        break;
+      case 'tester':
+        this.openTesterDialog();
+        break;
+      case 'reset':
+        this.openResetDialog();
+        break;
+      default:
+        break;
+    }
+  }
+
+  private openImport(accept: string, onLoad: (text: string) => void | Promise<void>) {
+    const fileInput = this.querySelector('[data-import]') as HTMLInputElement | null;
+    if (!fileInput) return;
+    fileInput.accept = accept;
+    fileInput.onchange = async () => {
+      const file = fileInput.files?.[0];
+      fileInput.value = '';
+      if (!file) return;
+      await onLoad(await file.text());
+    };
+    fileInput.click();
+  }
+
+  private bindDialogForms() {
+    const testerForm = this.querySelector<HTMLDialogElement>('[data-dialog="tester"]')?.querySelector('form');
+    const resetForm = this.querySelector<HTMLDialogElement>('[data-dialog="reset"]')?.querySelector('form');
+    if (!testerForm || !resetForm) return;
+    if (testerForm.dataset.bound === 'true') return;
+
+    testerForm.dataset.bound = 'true';
+    resetForm.dataset.bound = 'true';
+
+    testerForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const dialog = this.querySelector<HTMLDialogElement>('[data-dialog="tester"]');
+      const submitter = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+      if (submitter?.value === 'cancel') return;
+      const input = dialog?.querySelector<HTMLInputElement>('[data-tester-input]');
+      this.store.setTesterName(input?.value.trim() ?? '');
+      dialog?.close();
+    });
+
+    testerForm.querySelector<HTMLButtonElement>('[data-dialog-cancel]')?.addEventListener('click', () => {
+      this.querySelector<HTMLDialogElement>('[data-dialog="tester"]')?.close();
+    });
+
+    resetForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const dialog = this.querySelector<HTMLDialogElement>('[data-dialog="reset"]');
+      const submitter = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+      if (submitter?.value === 'cancel') return;
+      if (submitter?.value === 'reset') {
+        this.store.resetProgress();
+      }
+      dialog?.close();
+    });
+
+    resetForm.querySelector<HTMLButtonElement>('[data-dialog-cancel]')?.addEventListener('click', () => {
+      this.querySelector<HTMLDialogElement>('[data-dialog="reset"]')?.close();
+    });
+  }
+
+  private openTesterDialog() {
+    const dialog = this.querySelector<HTMLDialogElement>('[data-dialog="tester"]');
+    const input = dialog?.querySelector<HTMLInputElement>('[data-tester-input]');
+    if (!dialog || !input) return;
+    input.value = this.store.getSession().tester_name;
+    dialog.showModal();
+    input.focus();
+    input.select();
+  }
+
+  private openResetDialog() {
+    this.querySelector<HTMLDialogElement>('[data-dialog="reset"]')?.showModal();
+  }
+
+  private isCompactLayout(): boolean {
+    return window.matchMedia('(max-width: 1279px)').matches;
+  }
+
+  private setMobilePanel(panel: QaMobilePanel) {
+    this.closeActionsMenu();
+    this.mobilePanel = panel;
+    this.classList.remove('qa-shell--panel-suites', 'qa-shell--panel-cases', 'qa-shell--panel-detail');
+    this.classList.add(`qa-shell--panel-${panel}`);
+    this.querySelectorAll<HTMLButtonElement>('[data-mobile-panel]').forEach((button) => {
+      button.classList.toggle('is-active', button.dataset.mobilePanel === panel);
+    });
   }
 
   private captureFocus(): { kind: 'search' | 'notes' | 'select'; field?: string; start: number | null; end: number | null } | null {
@@ -98,6 +282,8 @@ export class AlloysQaRunner extends HTMLElement {
       progress: session.progress,
     });
     const reviewed = countReviewed(cases, session.progress);
+    const verdictBreakdown = computeVerdictBreakdown(cases, session.progress);
+    const suiteTooltipRows = buildSuiteTooltipRows(suiteStats);
     const selectedId = session.selected_id && filtered.some((c) => c.id === session.selected_id)
       ? session.selected_id
       : filtered[0]?.id ?? null;
@@ -105,12 +291,23 @@ export class AlloysQaRunner extends HTMLElement {
     const suiteMeta = getSuiteMeta(this.activeSuite);
     const pct = cases.length ? Math.round((reviewed / cases.length) * 100) : 0;
 
+    publishQaHeaderProgress({
+      pct,
+      reviewed,
+      total: cases.length,
+      version: this.catalog.datapack_version,
+      testerName: session.tester_name,
+      breakdown: verdictBreakdown,
+      suiteRows: suiteTooltipRows,
+    });
+
+    this.className = `qa-shell qa-shell--panel-${this.mobilePanel}`;
+
     this.innerHTML = `
       <aside class="qa-rail">
         <div class="qa-rail__header">
-          <div style="display:flex;align-items:center;gap:0.85rem">
-            <alloys-site-icon class="qa-rail__brand" variant="static" size="nav" pixels="64"></alloys-site-icon>
-            <div class="progress-ring" style="--pct:${pct}"><span>${pct}%</span></div>
+          <div class="qa-rail__summary">
+            ${renderProgressRing({ breakdown: verdictBreakdown, suiteRows: suiteTooltipRows })}
             <div>
               <p class="qa-rail__title">Test plan</p>
               <div class="muted" style="font-size:0.82rem">${reviewed} / ${cases.length} reviewed</div>
@@ -121,8 +318,7 @@ export class AlloysQaRunner extends HTMLElement {
         ${phasesWithSuites().map((phase) => `
           <div class="qa-rail__phase">${escapeHtml(phase.phase)}</div>
           ${phase.suites.map((suite) => {
-            const stats = suiteStats[suite.id] ?? { total: 0, reviewed: 0 };
-            const donePct = stats.total ? Math.round((stats.reviewed / stats.total) * 100) : 0;
+            const stats = suiteStats[suite.id] ?? { total: 0, reviewed: 0, pass: 0, fail: 0, skip: 0 };
             return `
               <button type="button" class="qa-rail__suite ${suite.id === this.activeSuite ? 'active' : ''}" data-suite="${escapeHtml(suite.id)}">
                 <div class="qa-rail__suite-label">
@@ -130,7 +326,7 @@ export class AlloysQaRunner extends HTMLElement {
                   <span class="muted">${stats.reviewed}/${stats.total}</span>
                 </div>
                 <div class="qa-rail__suite-desc">${escapeHtml(suite.description)}</div>
-                <div class="qa-rail__meter"><span style="width:${donePct}%"></span></div>
+                ${renderSuiteMeter(stats)}
               </button>
             `;
           }).join('')}
@@ -140,8 +336,11 @@ export class AlloysQaRunner extends HTMLElement {
       <section class="qa-nav">
         <div class="qa-nav__top">
           <div class="qa-nav__stats">
-            <strong>${escapeHtml(suiteMeta?.label ?? this.activeSuite)}</strong>
-            <span class="muted">Tester: ${escapeHtml(session.tester_name || '—')}</span>
+            <div class="qa-nav__stats-copy">
+              <strong>${escapeHtml(suiteMeta?.label ?? this.activeSuite)}</strong>
+              <span class="muted">Tester: ${escapeHtml(session.tester_name || '—')}</span>
+            </div>
+            ${this.renderActionsMenu('nav')}
           </div>
           <input class="qa-nav__search" type="search" placeholder="Search in this suite…" data-field="search" value="${escapeHtml(this.search)}" />
           <div class="qa-nav__filters">
@@ -150,17 +349,6 @@ export class AlloysQaRunner extends HTMLElement {
               <option value="">Any verdict</option>
               ${['untested', 'pass', 'fail', 'skip'].map((v) => `<option value="${v}" ${this.verdict === v ? 'selected' : ''}>${v}</option>`).join('')}
             </select>
-            <div class="file-menu">
-              <button type="button" class="btn btn--sm" data-action="menu">File</button>
-              <div class="file-menu__panel">
-                <button type="button" data-action="export-csv">Export CSV</button>
-                <button type="button" data-action="export-json">Export JSON</button>
-                <button type="button" data-action="import-csv">Import CSV</button>
-                <button type="button" data-action="import-json">Import JSON</button>
-                <button type="button" data-action="tester">Set tester name</button>
-                <button type="button" data-action="reset">Reset progress</button>
-              </div>
-            </div>
           </div>
         </div>
         <ul class="case-list">
@@ -173,10 +361,40 @@ export class AlloysQaRunner extends HTMLElement {
           ${selected ? this.renderDetail(selected, session.progress[selected.id]) : '<p class="muted">Select a case to begin.</p>'}
         </div>
       </section>
+      <nav class="qa-mobile-tabs" aria-label="Checklist panels">
+        <button type="button" class="qa-mobile-tabs__btn ${this.mobilePanel === 'suites' ? 'is-active' : ''}" data-mobile-panel="suites">Suites</button>
+        <button type="button" class="qa-mobile-tabs__btn ${this.mobilePanel === 'cases' ? 'is-active' : ''}" data-mobile-panel="cases">Cases</button>
+        <button type="button" class="qa-mobile-tabs__btn ${this.mobilePanel === 'detail' ? 'is-active' : ''}" data-mobile-panel="detail">Case</button>
+        ${this.renderActionsMenu('mobile')}
+      </nav>
       <input type="file" hidden data-import />
+      <dialog class="qa-dialog" data-dialog="tester">
+        <form class="qa-dialog__form" method="dialog">
+          <h3 class="qa-dialog__title">Set tester name</h3>
+          <p class="qa-dialog__lead muted">Shown in the case list header and on exported reports.</p>
+          <input class="qa-dialog__input" type="text" data-tester-input placeholder="Your name" autocomplete="name" />
+          <div class="qa-dialog__actions">
+            <button type="button" class="btn btn--ghost btn--sm" data-dialog-cancel>Cancel</button>
+            <button type="submit" class="btn btn--primary btn--sm" value="save">Save</button>
+          </div>
+        </form>
+      </dialog>
+      <dialog class="qa-dialog" data-dialog="reset">
+        <form class="qa-dialog__form" method="dialog">
+          <h3 class="qa-dialog__title">Reset all progress?</h3>
+          <p class="qa-dialog__lead muted">Clears every verdict and note in this browser. Exports are not affected.</p>
+          <div class="qa-dialog__actions">
+            <button type="button" class="btn btn--ghost btn--sm" data-dialog-cancel>Cancel</button>
+            <button type="submit" class="btn btn--sm active-fail" value="reset">Reset progress</button>
+          </div>
+        </form>
+      </dialog>
     `;
 
-    this.bindEvents(cases, session, reviewed, filtered, selected);
+    this.bindEvents(cases, filtered, selected);
+    this.bindDialogForms();
+    this.tooltipCleanup?.();
+    this.tooltipCleanup = bindViewportTooltips(this);
     this.restoreFocus(focusSnapshot);
   }
 
@@ -190,6 +408,7 @@ export class AlloysQaRunner extends HTMLElement {
     list.innerHTML = filtered.map((testCase) => this.renderCaseButton(testCase, session, selectedId)).join('');
     this.querySelectorAll('[data-case]').forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (this.isCompactLayout()) this.mobilePanel = 'detail';
         this.store.setSelectedId((btn as HTMLButtonElement).dataset.case ?? null);
       });
     });
@@ -199,8 +418,11 @@ export class AlloysQaRunner extends HTMLElement {
     const p = session.progress[testCase.id]?.verdict ?? 'untested';
     const badge = p !== 'untested' ? `<span class="badge badge--${escapeHtml(p)}">${escapeHtml(p)}</span>` : '';
     return `<li><button type="button" data-case="${escapeHtml(testCase.id)}" class="${testCase.id === selectedId ? 'active' : ''}">
-      <div class="id">${escapeHtml(testCase.id)} ${badge}</div>
-      <div class="title">${escapeHtml(testCase.title)}</div>
+      ${renderQaCaseIcon(testCase, { size: 'list' })}
+      <span class="case-list__copy">
+        <span class="id">${escapeHtml(testCase.id)} ${badge}</span>
+        <span class="title">${escapeHtml(testCase.title)}</span>
+      </span>
     </button></li>`;
   }
 
@@ -211,10 +433,15 @@ export class AlloysQaRunner extends HTMLElement {
     const sev = testCase.severity === 'blocker' ? 'blocker' : testCase.severity === 'high' ? 'high' : '';
     return `
       <div class="qa-workspace__header">
-        <h2>${escapeHtml(testCase.title)}</h2>
-        <span class="badge ${sev ? `badge--${sev}` : ''}">${escapeHtml(testCase.severity)}</span>
-        <span class="badge">${escapeHtml(testCase.id)}</span>
-        ${testCase.alloy ? `<span class="badge">${escapeHtml(testCase.alloy)}</span>` : ''}
+        ${renderQaCaseIcon(testCase, { size: 'detail' })}
+        <div class="qa-workspace__header-copy">
+          <h2>${escapeHtml(testCase.title)}</h2>
+          <div class="qa-workspace__badges">
+            <span class="badge ${sev ? `badge--${sev}` : ''}">${escapeHtml(testCase.severity)}</span>
+            <span class="badge">${escapeHtml(testCase.id)}</span>
+            ${testCase.alloy ? `<span class="badge">${escapeHtml(testCase.alloy)}</span>` : ''}
+          </div>
+        </div>
       </div>
       <p class="qa-workspace__objective">${escapeHtml(testCase.objective)}</p>
       ${section('Preconditions', testCase.preconditions)}
@@ -237,8 +464,6 @@ export class AlloysQaRunner extends HTMLElement {
 
   private bindEvents(
     cases: QaCase[],
-    session: ReturnType<QaSessionStore['getSession']>,
-    reviewed: number,
     filtered: QaCase[],
     selected: QaCase | null,
   ) {
@@ -268,51 +493,22 @@ export class AlloysQaRunner extends HTMLElement {
       btn.addEventListener('click', () => {
         this.activeSuite = (btn as HTMLButtonElement).dataset.suite ?? 'smoke';
         this.search = '';
+        if (this.isCompactLayout()) this.setMobilePanel('cases');
         this.render();
       });
     });
     this.querySelectorAll('[data-case]').forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (this.isCompactLayout()) this.mobilePanel = 'detail';
         this.store.setSelectedId((btn as HTMLButtonElement).dataset.case ?? null);
       });
     });
 
-    const panel = this.querySelector('.file-menu__panel');
-    this.querySelector('[data-action="menu"]')?.addEventListener('click', () => panel?.classList.toggle('open'));
-    this.querySelector('[data-action="export-csv"]')?.addEventListener('click', () => {
-      this.download('alloys-qa.csv', exportQaCsv(this.catalog.datapack_version, cases, session, reviewed), 'text/csv');
-    });
-    this.querySelector('[data-action="export-json"]')?.addEventListener('click', () => {
-      this.download('alloys-qa.json', JSON.stringify(exportQaJson(this.catalog.datapack_version, cases, session, reviewed), null, 2), 'application/json');
-    });
-    this.querySelector('[data-action="tester"]')?.addEventListener('click', () => {
-      const name = prompt('Tester name:', session.tester_name);
-      if (name != null) this.store.setTesterName(name.trim());
-    });
-    this.querySelector('[data-action="reset"]')?.addEventListener('click', () => {
-      if (confirm('Reset all progress?')) this.store.resetProgress();
-    });
-    const fileInput = this.querySelector('[data-import]') as HTMLInputElement;
-    this.querySelector('[data-action="import-csv"]')?.addEventListener('click', () => {
-      fileInput.accept = '.csv,text/csv';
-      fileInput.onchange = async () => {
-        const file = fileInput.files?.[0];
-        fileInput.value = '';
-        if (!file) return;
-        this.store.mergeImport(importQaCsv(await file.text(), new Set(cases.map((c) => c.id))));
-      };
-      fileInput.click();
-    });
-    this.querySelector('[data-action="import-json"]')?.addEventListener('click', () => {
-      fileInput.accept = '.json,application/json';
-      fileInput.onchange = async () => {
-        const file = fileInput.files?.[0];
-        fileInput.value = '';
-        if (!file) return;
-        const data = JSON.parse(await file.text());
-        this.store.mergeImport({ tester_name: data.tester_name, progress: data.progress });
-      };
-      fileInput.click();
+    this.querySelectorAll('[data-mobile-panel]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const panel = (btn as HTMLButtonElement).dataset.mobilePanel as QaMobilePanel | undefined;
+        if (panel) this.setMobilePanel(panel);
+      });
     });
 
     if (selected) {
@@ -346,7 +542,9 @@ export class AlloysQaRunner extends HTMLElement {
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = filename;
+    document.body.appendChild(anchor);
     anchor.click();
+    anchor.remove();
     URL.revokeObjectURL(url);
   }
 }

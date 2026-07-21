@@ -1,4 +1,5 @@
 import { defineAlloysElement } from '../../atoms/dom/defineElement.js';
+import { clearQaHeaderProgress } from '../../molecules/qa-header-bridge/qaHeaderBridge.js';
 import { QaSessionStore } from '../../molecules/qa-session/qaSessionStore.js';
 import { QaStorageLocal } from '../../plugs/browser/qaStorageLocal.js';
 import type { QaCatalog } from '../../molecules/qa-session/qaSessionTypes.js';
@@ -14,6 +15,10 @@ export class AlloysQaView extends HTMLElement {
     (runner as import('../../recipes/qa-runner/qa-runner.js').AlloysQaRunner).setStore(this.store);
     (runner as import('../../recipes/qa-runner/qa-runner.js').AlloysQaRunner).setCatalog(catalog);
     this.replaceChildren(runner);
+  }
+
+  disconnectedCallback() {
+    clearQaHeaderProgress();
   }
 }
 

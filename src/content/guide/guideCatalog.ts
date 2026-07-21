@@ -103,7 +103,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       </ol>
       <h2>Sharing with teammates</h2>
       <ul>
-        <li>Use <strong>File → Export progress (CSV)</strong> to save your results.</li>
+        <li>Use <strong>Actions → Export CSV</strong> to save your results.</li>
         <li>Teammates can import the same CSV to continue where you left off.</li>
         <li>Progress lives in your browser until you export it — clearing site data resets local saves.</li>
       </ul>
