@@ -25,6 +25,16 @@ export class AlloysSiteHeader extends HTMLElement {
     `;
     this.updateActiveNav();
     window.addEventListener('popstate', () => this.updateActiveNav());
+
+    this.querySelectorAll<HTMLAnchorElement>('.nav-link').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const view = link.dataset.view;
+        if (view === 'home') navigate({ view: 'home' });
+        else if (view === 'guide') navigate({ view: 'guide', slug: null });
+        else if (view === 'checklist') navigate({ view: 'checklist' });
+      });
+    });
   }
 
   private updateActiveNav() {

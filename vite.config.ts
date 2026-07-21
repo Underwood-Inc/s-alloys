@@ -1,9 +1,23 @@
-import { defineConfig } from 'vite';
+import { copyFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+
+/** GitHub Pages serves 404.html for unknown paths — copy index so SPA routes work. */
+function spa404(): Plugin {
+  return {
+    name: 'spa-404',
+    closeBundle() {
+      const dist = join(__dirname, 'dist');
+      copyFileSync(join(dist, 'index.html'), join(dist, '404.html'));
+    },
+  };
+}
 
 export default defineConfig({
   base: '/s-alloys/',
   plugins: [
+    spa404(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
