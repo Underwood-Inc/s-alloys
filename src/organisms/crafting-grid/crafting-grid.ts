@@ -107,7 +107,9 @@ export class CraftingGrid extends HTMLElement {
           data-item-index="${index}"
           aria-label="${escapeHtml(item.label)}"
         >
-          <img src="${escapeHtml(item.icon)}" alt="" width="48" height="48" loading="lazy" decoding="async" />
+          <span class="crafting-grid__icon" aria-hidden="true">
+            <img src="${escapeHtml(item.icon)}" alt="" loading="lazy" decoding="async" />
+          </span>
         </button>
       `;
     }).join('');
@@ -120,10 +122,15 @@ export class CraftingGrid extends HTMLElement {
       ${fx}
       <div class="crafting-grid__surface">
         <div class="crafting-grid__cluster crafting-grid__cluster--input">
-          <div class="crafting-grid__chrome crafting-grid__chrome--input" aria-hidden="true">
-            <img class="crafting-grid__chrome-art" src="${escapeHtml(this.uiAsset('crafting-panel-input.png'))}" alt="" />
-          </div>
-          <div class="crafting-grid__panel crafting-grid__panel--input" aria-label="Crafting ingredients">
+          <img
+            class="crafting-grid__frame"
+            src="${escapeHtml(this.uiAsset('crafting-panel-input.png'))}"
+            alt=""
+            width="930"
+            height="957"
+            decoding="async"
+          />
+          <div class="crafting-grid__overlay" aria-label="Crafting ingredients">
             <div class="crafting-grid__slots">${slotsHtml}</div>
           </div>
         </div>
@@ -131,24 +138,29 @@ export class CraftingGrid extends HTMLElement {
           <img src="${escapeHtml(this.uiAsset('crafting-arrow.png'))}" alt="" width="48" height="48" />
         </div>
         <div class="crafting-grid__cluster crafting-grid__cluster--result">
-          <div class="crafting-grid__chrome crafting-grid__chrome--result" aria-hidden="true">
-            <img class="crafting-grid__chrome-art" src="${escapeHtml(this.uiAsset('crafting-panel-result.png'))}" alt="" />
-          </div>
-          <div class="crafting-grid__panel crafting-grid__panel--result" aria-label="Crafting result">
+          <img
+            class="crafting-grid__frame"
+            src="${escapeHtml(this.uiAsset('crafting-panel-result.png'))}"
+            alt=""
+            width="872"
+            height="868"
+            decoding="async"
+          />
+          <div class="crafting-grid__overlay" aria-label="Crafting result">
             <button
               type="button"
               class="crafting-grid__result"
               data-item-index="${resultIndex}"
               aria-label="${escapeHtml(recipe.result.label)}"
             >
-              <img
-                src="${escapeHtml(recipe.result.icon)}"
-                alt=""
-                width="56"
-                height="56"
-                loading="lazy"
-                decoding="async"
-              />
+              <span class="crafting-grid__icon" aria-hidden="true">
+                <img
+                  src="${escapeHtml(recipe.result.icon)}"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
             </button>
           </div>
         </div>

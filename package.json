@@ -8,12 +8,14 @@
     "test:coverage": "vitest run --coverage",
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview --port 4173"
+    "preview": "vite preview --port 4173",
+    "normalize:ingredients": "node tools/normalize-ingredient-icons.mjs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.2.4",
     "gifenc": "^1.0.3",
     "happy-dom": "^17.6.3",
+    "pngjs": "^7.0.0",
     "sass": "^1.89.2",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",

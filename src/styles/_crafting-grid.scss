@@ -1,4 +1,13 @@
+// Frame art (930×957 input, 872×868 result) drives cluster size.
+// Overlay insets + gap measured from crafting-panel-input.png cell wells.
 .crafting-grid {
+  --craft-input-width: min(100%, 18.5rem);
+  --craft-result-width: min(100%, 19.12rem);
+  --craft-input-inset: 16.67% 16.56% 16.67% 14.95%;
+  --craft-result-inset: 29%;
+  --craft-slot-gap: 6.6%;
+  --craft-icon-size: 88%;
+
   position: relative;
   display: flex;
   flex-direction: column;
@@ -16,84 +25,105 @@
   align-items: center;
   justify-content: center;
   gap: clamp(0.75rem, 2.5vw, 1.35rem);
-  width: min(100%, 34rem);
+  width: min(100%, 40rem);
 }
 
 .crafting-grid__cluster {
   position: relative;
-  display: grid;
-  place-items: center;
+  width: var(--craft-cluster-width, var(--craft-input-width));
 }
 
-.crafting-grid__chrome {
-  position: absolute;
-  inset: -0.55rem;
-  pointer-events: none;
-  z-index: 0;
+.crafting-grid__cluster--result {
+  --craft-cluster-width: var(--craft-result-width);
 }
 
-.crafting-grid__chrome-art {
+.crafting-grid__frame {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: fill;
-  image-rendering: auto;
-  opacity: 0.95;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
 }
 
-.crafting-grid__panel {
-  position: relative;
-  z-index: 1;
-  padding: 0.85rem;
-  border-radius: 0.35rem;
-  background: rgb(8 6 12 / 35%);
-  border: 1px solid rgb(244 200 106 / 12%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 4%);
+.crafting-grid__overlay {
+  position: absolute;
+  inset: var(--craft-overlay-inset, var(--craft-input-inset));
+  display: flex;
+}
+
+.crafting-grid__cluster--result .crafting-grid__overlay {
+  --craft-overlay-inset: var(--craft-result-inset);
 }
 
 .crafting-grid__slots {
   display: grid;
-  grid-template-columns: repeat(3, minmax(3.25rem, 3.85rem));
-  gap: 0.35rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: var(--craft-slot-gap);
+  width: 100%;
+  height: 100%;
 }
 
-.crafting-grid__slot {
+.crafting-grid__slot,
+.crafting-grid__result {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  line-height: 0;
   display: grid;
   place-items: center;
-  width: clamp(3.25rem, 7.5vw, 3.85rem);
-  height: clamp(3.25rem, 7.5vw, 3.85rem);
-  padding: 0.3rem;
-  border-radius: 0.2rem;
-  border: 1px solid rgb(0 0 0 / 55%);
-  background:
-    linear-gradient(180deg, rgb(72 68 82 / 55%), rgb(24 22 30 / 88%));
-  box-shadow:
-    inset 0 2px 5px rgb(0 0 0 / 45%),
-    inset 0 -1px 0 rgb(255 255 255 / 5%);
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   cursor: pointer;
-  transition:
-    transform 120ms var(--ease, ease),
-    filter 120ms var(--ease, ease);
+  transition: filter 120ms var(--ease, ease);
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    image-rendering: pixelated;
-    filter: drop-shadow(0 2px 4px rgb(0 0 0 / 45%));
-  }
-
-  &:hover,
   &:focus-visible {
-    transform: translateY(-1px);
-    filter: brightness(1.08);
     outline: none;
   }
 }
 
+.crafting-grid__icon {
+  display: grid;
+  place-items: center;
+  width: var(--craft-icon-size);
+  height: var(--craft-icon-size);
+  pointer-events: none;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 4px rgb(0 0 0 / 45%));
+    transition: transform 120ms var(--ease, ease), filter 120ms var(--ease, ease);
+  }
+}
+
+.crafting-grid__slot:hover img,
+.crafting-grid__slot:focus-visible img,
+.crafting-grid__result:hover img,
+.crafting-grid__result:focus-visible img {
+  transform: scale(1.05);
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 45%)) brightness(1.1);
+}
+
+.crafting-grid__result .crafting-grid__icon img {
+  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 50%));
+}
+
 .crafting-grid__slot--empty {
-  opacity: 0.28;
-  cursor: default;
-  background: rgb(0 0 0 / 22%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .crafting-grid__arrow {
@@ -106,38 +136,6 @@
     width: 100%;
     height: auto;
     image-rendering: auto;
-  }
-}
-
-.crafting-grid__result {
-  display: grid;
-  place-items: center;
-  width: clamp(4.25rem, 9vw, 5rem);
-  height: clamp(4.25rem, 9vw, 5rem);
-  padding: 0.45rem;
-  border-radius: 0.2rem;
-  border: 1px solid rgb(244 200 106 / 22%);
-  background:
-    linear-gradient(180deg, rgb(58 48 28 / 45%), rgb(18 14 10 / 82%));
-  box-shadow:
-    inset 0 2px 6px rgb(0 0 0 / 45%),
-    0 0 18px rgb(244 200 106 / 12%);
-  cursor: pointer;
-  transition: transform 120ms var(--ease, ease), filter 120ms var(--ease, ease);
-
-  &:hover,
-  &:focus-visible {
-    transform: scale(1.04);
-    filter: brightness(1.1);
-    outline: none;
-  }
-
-  img {
-    width: 78%;
-    height: 78%;
-    object-fit: contain;
-    image-rendering: pixelated;
-    filter: drop-shadow(0 4px 10px rgb(0 0 0 / 50%));
   }
 }
 
