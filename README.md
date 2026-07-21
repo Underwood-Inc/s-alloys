@@ -75,4 +75,8 @@ That updates **`public/data/cases.json` only**, then runs `npm run build`. Icons
 
 ## Deploy
 
-GitHub Pages serves the built `dist/` output. Use the included GitHub Actions workflow or run `npm run build` and publish `dist/` per your Pages settings.
+GitHub Pages must use **GitHub Actions** as the source (Settings → Pages → Build and deployment → **GitHub Actions**), not “Deploy from branch”. The repo root is unbuilt source; only `dist/` from the workflow is valid for production.
+
+The **Deploy site** workflow runs on every push to `master` (and can be re-run manually under Actions). It runs tests, builds with Vite (`base: /s-alloys/`), and publishes `dist/`.
+
+If Actions jobs fail with **billing issue**, fix billing on the org/account first — Pages will stay blank until a successful workflow deploy runs.
