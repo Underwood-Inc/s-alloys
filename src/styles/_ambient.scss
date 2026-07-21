@@ -1,0 +1,484 @@
+alloys-ambient-background {
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
+  max-height: 100dvh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+}
+
+.ambient {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
+  max-height: 100dvh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 50% 100%, rgb(12 10 22 / 95%) 0%, transparent 55%),
+    radial-gradient(90% 60% at 80% 10%, rgb(22 18 32 / 80%) 0%, transparent 50%),
+    radial-gradient(ellipse 90% 70% at 15% 0%, rgb(106 140 175 / 12%) 0%, transparent 55%),
+    var(--bg-darkest, #0d0d0d);
+  isolation: isolate;
+}
+
+.ambient__sky-effects {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.ambient__nebula {
+  position: absolute;
+  inset: 0;
+}
+
+.ambient__nebula-cloud {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.ambient__nebula-cloud--violet {
+  top: -10%;
+  left: -8%;
+  width: 70vmax;
+  height: 55vmax;
+  background: radial-gradient(
+    circle at center,
+    rgb(123 94 167 / 18%) 0%,
+    rgb(88 72 132 / 8%) 42%,
+    transparent 72%
+  );
+  animation: ambient-nebula-violet 72s ease-in-out infinite alternate;
+}
+
+.ambient__nebula-cloud--gold {
+  top: 35%;
+  right: -12%;
+  width: 65vmax;
+  height: 50vmax;
+  background: radial-gradient(
+    circle at center,
+    rgb(244 200 106 / 16%) 0%,
+    rgb(251 242 196 / 6%) 38%,
+    transparent 70%
+  );
+  animation: ambient-nebula-gold 64s ease-in-out infinite alternate;
+}
+
+.ambient__nebula-cloud--teal {
+  bottom: -15%;
+  left: 20%;
+  width: 60vmax;
+  height: 45vmax;
+  background: radial-gradient(
+    circle at center,
+    rgb(154 212 212 / 12%) 0%,
+    rgb(90 130 160 / 5%) 45%,
+    transparent 72%
+  );
+  animation: ambient-nebula-teal 58s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-nebula-violet {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(3vw, 2vh, 0) scale(1.05); }
+}
+
+@keyframes ambient-nebula-gold {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-4vw, 3vh, 0) scale(1.06); }
+}
+
+@keyframes ambient-nebula-teal {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(2vw, -3vh, 0) scale(1.04); }
+}
+
+.ambient__depth {
+  position: absolute;
+  inset: 0;
+}
+
+.ambient__depth-layer {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.ambient__depth-layer--one {
+  top: -35%;
+  left: -25%;
+  width: 90vmax;
+  height: 90vmax;
+  background: radial-gradient(circle at center, rgb(45 42 58 / 45%) 0%, transparent 68%);
+  animation: ambient-depth-one 82s ease-in-out infinite alternate;
+}
+
+.ambient__depth-layer--two {
+  bottom: -40%;
+  right: -30%;
+  width: 100vmax;
+  height: 100vmax;
+  background: radial-gradient(circle at center, rgb(28 26 38 / 42%) 0%, transparent 70%);
+  animation: ambient-depth-two 96s ease-in-out infinite alternate;
+}
+
+.ambient__depth-layer--three {
+  top: 20%;
+  left: 35%;
+  width: 75vmax;
+  height: 75vmax;
+  background: radial-gradient(circle at center, rgb(55 48 68 / 16%) 0%, transparent 72%);
+  animation: ambient-depth-three 68s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-depth-one {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(4vw, 3vh, 0) scale(1.06); }
+}
+
+@keyframes ambient-depth-two {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-5vw, -2vh, 0) scale(1.04); }
+}
+
+@keyframes ambient-depth-three {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(-2vw, 4vh, 0) scale(1.08); }
+}
+
+.ambient__aurora {
+  position: absolute;
+  inset: 0;
+}
+
+.ambient__aurora-wash {
+  position: absolute;
+}
+
+.ambient__aurora-wash--primary {
+  top: -20%;
+  left: -15%;
+  width: 85%;
+  height: 70%;
+  opacity: 0.42;
+  background: radial-gradient(
+    80% 70% at 35% 45%,
+    rgb(244 200 106 / 18%) 0%,
+    rgb(251 242 196 / 8%) 38%,
+    transparent 72%
+  );
+  animation: ambient-aurora-drift-primary 40s ease-in-out infinite alternate;
+}
+
+.ambient__aurora-wash--secondary {
+  bottom: -15%;
+  right: -10%;
+  width: 80%;
+  height: 65%;
+  opacity: 0.34;
+  background: radial-gradient(
+    75% 65% at 60% 55%,
+    rgb(106 140 175 / 14%) 0%,
+    rgb(154 212 212 / 8%) 42%,
+    transparent 74%
+  );
+  animation: ambient-aurora-drift-secondary 48s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-aurora-drift-primary {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(5vw, 7vh, 0); }
+}
+
+@keyframes ambient-aurora-drift-secondary {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-4vw, -5vh, 0); }
+}
+
+.ambient__stars {
+  position: absolute;
+  inset: 0;
+}
+
+.ambient__stars-dust,
+.ambient__stars-medium {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.ambient__stars-dust {
+  opacity: 0.85;
+  animation: ambient-dust-grain 3.5s steps(6, jump-end) infinite;
+}
+
+.ambient__stars-medium {
+  opacity: 0.95;
+  animation: ambient-medium-grain 5s steps(5, jump-end) infinite;
+  animation-delay: -1.2s;
+}
+
+.ambient__stars-animated {
+  position: absolute;
+  inset: 0;
+}
+
+@keyframes ambient-dust-grain {
+  0%, 100% { opacity: 0.45; }
+  18% { opacity: 0.92; }
+  36% { opacity: 0.55; }
+  62% { opacity: 0.78; }
+  81% { opacity: 0.5; }
+}
+
+@keyframes ambient-medium-grain {
+  0%, 100% { opacity: 0.6; }
+  12% { opacity: 1; }
+  28% { opacity: 0.68; }
+  54% { opacity: 0.95; }
+  73% { opacity: 0.62; }
+}
+
+.ambient__star {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg));
+  transform-origin: center center;
+}
+
+.ambient__star--tone-warm {
+  --star-core: 255 248 225;
+  --star-glow: 251 242 196;
+  --star-flare: 244 200 106;
+}
+
+.ambient__star--tone-cool {
+  --star-core: 220 240 255;
+  --star-glow: 154 212 212;
+  --star-flare: 106 140 175;
+}
+
+.ambient__star--tone-pink {
+  --star-core: 255 220 240;
+  --star-glow: 255 158 210;
+  --star-flare: 255 120 190;
+}
+
+.ambient__star--twinkle {
+  border-radius: 50%;
+  background: rgb(var(--star-core) / 95%);
+  opacity: var(--star-opacity-min, 0.12);
+  box-shadow:
+    0 0 2px rgb(var(--star-glow) / 80%),
+    0 0 5px rgb(var(--star-flare) / 35%);
+  animation-name: anime-twinkle-fast;
+  animation-timing-function: steps(3, jump-end);
+  animation-iteration-count: infinite;
+}
+
+@keyframes anime-twinkle-fast {
+  0%, 70%, 100% {
+    opacity: var(--star-opacity-min, 0.1);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(0.75);
+  }
+
+  8% {
+    opacity: var(--star-opacity-max, 1);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(1.35);
+  }
+
+  14% {
+    opacity: calc(var(--star-opacity-min, 0.1) + 0.15);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(0.85);
+  }
+
+  38% {
+    opacity: calc(var(--star-opacity-min, 0.1) + 0.45);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(1.05);
+  }
+}
+
+.ambient__star--cross {
+  width: auto !important;
+  height: auto !important;
+  background: transparent;
+  opacity: var(--star-opacity-min, 0.2);
+  animation-name: anime-cross-flare;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.ambient__star-flare {
+  position: relative;
+  display: block;
+  width: var(--flare-size, 10px);
+  height: var(--flare-size, 10px);
+}
+
+.ambient__star-flare::before,
+.ambient__star-flare::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(var(--star-glow) / 90%) 42%,
+    rgb(var(--star-core) / 100%) 50%,
+    rgb(var(--star-glow) / 90%) 58%,
+    transparent 100%
+  );
+  transform: translate(-50%, -50%);
+}
+
+.ambient__star-flare::before {
+  width: calc(var(--flare-size, 10px) * 2.8);
+  height: 1px;
+}
+
+.ambient__star-flare::after {
+  width: 1px;
+  height: calc(var(--flare-size, 10px) * 2.8);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(var(--star-glow) / 90%) 42%,
+    rgb(var(--star-core) / 100%) 50%,
+    rgb(var(--star-glow) / 90%) 58%,
+    transparent 100%
+  );
+}
+
+.ambient__star--cross .ambient__star-flare::before,
+.ambient__star--cross .ambient__star-flare::after {
+  filter: drop-shadow(0 0 3px rgb(var(--star-flare) / 70%));
+}
+
+@keyframes anime-cross-flare {
+  0%, 62%, 100% {
+    opacity: var(--star-opacity-min, 0.18);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(0.82);
+  }
+
+  6% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(1.25);
+  }
+
+  12% {
+    opacity: var(--star-opacity-max, 0.95);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(1.08);
+  }
+
+  28% {
+    opacity: calc(var(--star-opacity-min, 0.18) + 0.25);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(0.95);
+  }
+
+  44% {
+    opacity: calc(var(--star-opacity-max, 0.95) * 0.65);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(1.12);
+  }
+}
+
+.ambient__star--spark {
+  border-radius: 50%;
+  background: rgb(var(--star-core) / 100%);
+  opacity: var(--star-opacity-min, 0.08);
+  box-shadow:
+    0 0 4px rgb(var(--star-glow) / 100%),
+    0 0 10px rgb(var(--star-flare) / 65%),
+    0 0 18px rgb(var(--star-flare) / 30%);
+  animation-name: anime-spark-pop;
+  animation-timing-function: steps(2, jump-end);
+  animation-iteration-count: infinite;
+}
+
+.ambient__star-spark {
+  position: absolute;
+  inset: -120%;
+  border: 1px solid rgb(var(--star-glow) / 35%);
+  border-radius: 50%;
+  opacity: 0;
+  animation: anime-spark-ring 4.5s ease-out infinite;
+  animation-delay: inherit;
+}
+
+@keyframes anime-spark-pop {
+  0%, 78%, 100% {
+    opacity: var(--star-opacity-min, 0.06);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(0.6);
+  }
+
+  4% {
+    opacity: var(--star-opacity-max, 1);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(1.55);
+  }
+
+  10% {
+    opacity: calc(var(--star-opacity-max, 1) * 0.55);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(0.9);
+  }
+
+  22% {
+    opacity: calc(var(--star-opacity-min, 0.06) + 0.35);
+    transform: translate(-50%, -50%) rotate(var(--star-rotation, 0deg)) scale(1.15);
+  }
+}
+
+@keyframes anime-spark-ring {
+  0%, 76%, 100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  6% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+
+  18% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media (max-width: 768px) {
+  .ambient__depth-layer--three { opacity: 0.7; }
+  .ambient__aurora-wash--primary { opacity: 0.46; }
+  .ambient__aurora-wash--secondary { opacity: 0.34; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient__nebula-cloud,
+  .ambient__depth-layer,
+  .ambient__aurora-wash,
+  .ambient__stars-dust,
+  .ambient__stars-medium,
+  .ambient__star--twinkle,
+  .ambient__star--cross,
+  .ambient__star--spark,
+  .ambient__star-spark {
+    animation: none !important;
+  }
+
+  .ambient__sky-effects {
+    transform: none !important;
+  }
+}

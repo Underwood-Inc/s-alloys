@@ -1,0 +1,73 @@
+.site-icon {
+  display: block;
+  flex-shrink: 0;
+
+  &--nav {
+    width: 48px;
+    height: 48px;
+  }
+
+  &--md {
+    width: 128px;
+    height: 128px;
+  }
+
+  &--lg {
+    width: min(100%, 16rem);
+    aspect-ratio: 1;
+  }
+
+  &--hero {
+    width: min(100%, 24rem);
+    aspect-ratio: 1;
+  }
+
+  &__static {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+  }
+
+  &--hero &__static,
+  &--lg &__static {
+    filter: drop-shadow(0 24px 56px rgba(0, 0, 0, 0.55));
+  }
+
+  &__cycle {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    isolation: isolate;
+  }
+
+  &--nav &__frame {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
+  }
+
+  &__frame {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.48s ease;
+    filter: drop-shadow(0 24px 56px rgba(0, 0, 0, 0.55));
+
+    &.is-under {
+      opacity: 1;
+      z-index: 1;
+      transition: none;
+    }
+
+    &.is-active {
+      opacity: 1;
+      z-index: 2;
+    }
+  }
+}
