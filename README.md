@@ -75,8 +75,21 @@ That updates **`public/data/cases.json` only**, then runs `npm run build`. Icons
 
 ## Deploy
 
-GitHub Pages must use **GitHub Actions** as the source (Settings → Pages → Build and deployment → **GitHub Actions**), not “Deploy from branch”. The repo root is unbuilt source; only `dist/` from the workflow is valid for production.
+**`master`** — source only (TypeScript, `public/`, tests).  
+**`gh-pages`** — built `dist/` only (what GitHub Pages serves). Never edit `gh-pages` by hand.
 
-The **Deploy site** workflow runs on every push to `master` (and can be re-run manually under Actions). It runs tests, builds with Vite (`base: /s-alloys/`), and publishes `dist/`.
+GitHub Pages: **Deploy from branch** → branch **`gh-pages`** → folder **`/`** (root).
 
-If Actions jobs fail with **billing issue**, fix billing on the org/account first — Pages will stay blank until a successful workflow deploy runs.
+On every push to `master`, the **Deploy site** workflow runs `npm test`, `npm run build`, and force-pushes `dist/` to `gh-pages`. You can also re-run it manually under Actions → Deploy site.
+
+If Actions fail with a **billing issue**, build locally and publish until billing is fixed:
+
+```powershell
+npm run build
+cd dist
+git init
+git checkout -b gh-pages
+git add -A
+git commit -m "deploy: local build"
+git push -f git@github.com:Underwood-Inc/s-alloys.git HEAD:gh-pages
+```
