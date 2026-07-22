@@ -1,0 +1,112 @@
+.fragment-showcase {
+  position: relative;
+  margin: 0 0 1.5rem;
+}
+
+.fragment-showcase__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fragment-showcase__item {
+  margin: 0 0 0.65rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.fragment-showcase__row {
+  display: grid;
+  grid-template-columns: 3.25rem 1fr;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.fragment-showcase__trigger {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0;
+  padding: 0.2rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: rgb(0 0 0 / 18%);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 140ms var(--ease),
+    background 140ms var(--ease),
+    box-shadow 140ms var(--ease);
+
+  &:hover,
+  &:focus-visible,
+  &.is-active {
+    border-color: rgb(244 200 106 / 35%);
+    background: rgb(244 200 106 / 6%);
+    box-shadow: 0 0 12px rgb(244 200 106 / 18%);
+    outline: none;
+  }
+}
+
+.fragment-showcase__preview {
+  width: 2.75rem;
+  height: 2.75rem;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 45%));
+}
+
+.fragment-showcase__copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  line-height: 1.55;
+}
+
+.fragment-showcase__name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fragment-showcase__vein {
+  color: var(--text-secondary);
+}
+
+.fragment-showcase__flyout {
+  --craft-input-width: min(100%, 13.5rem);
+  --craft-result-width: min(100%, 14rem);
+
+  width: min(34rem, 94vw);
+  padding: 0.65rem 0.75rem 0.5rem;
+  border: 1px solid rgb(244 200 106 / 28%);
+  border-radius: var(--radius-md);
+  background: linear-gradient(165deg, rgb(18 12 8 / 96%), rgb(6 4 2 / 98%));
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 55%) inset,
+    0 16px 40px rgb(0 0 0 / 55%),
+    0 0 24px rgb(244 200 106 / 12%);
+
+  .crafting-grid {
+    padding: 0;
+  }
+
+  .crafting-grid__surface {
+    gap: clamp(0.45rem, 2vw, 0.85rem);
+  }
+
+  .crafting-grid__caption {
+    margin-top: 0.35rem;
+    font-size: var(--font-minecraft-sm);
+  }
+}
+
+@media (max-width: 720px) {
+  .fragment-showcase__flyout {
+    --craft-input-width: min(100%, 11.5rem);
+    --craft-result-width: min(100%, 12rem);
+    width: min(100%, 22rem);
+  }
+}

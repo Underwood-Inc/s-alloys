@@ -1,4 +1,6 @@
 import type { GearKind } from './gearLayouts.js';
+import { fragmentDropRateLine } from './fragmentDropCatalog.js';
+import { ingredientAcquisitionLore } from './ingredientAcquisitionCatalog.js';
 
 export interface AlloyPlayerMeta {
   tier: number;
@@ -113,25 +115,12 @@ export const ALLOY_PLAYER_META: Record<string, AlloyPlayerMeta> = {
   },
 };
 
-const VANILLA_INGREDIENT_LORE: Record<string, string[]> = {
-  stick: ['Crafting material'],
-  string: ['Dropped by spiders'],
-  copper_ingot: ['Smelted from copper ore'],
-  clay_ball: ['Mined from clay blocks'],
-  brick: ['Smelted from clay balls'],
-  iron_nugget: ['Iron fragment'],
-  coal: ['Fuel and crafting ingredient'],
-  iron_ingot: ['Smelted from iron ore'],
-  lapis: ['Mined from lapis ore'],
-  gold_nugget: ['Gold fragment'],
-  gold_ingot: ['Smelted from gold ore'],
-  amethyst: ['Found in geodes'],
-  emerald: ['Villager currency'],
-  redstone: ['Mined from redstone ore'],
-  diamond: ['Rare gem'],
-  echo_shard: ['Found in ancient cities'],
-  netherite_scrap: ['Salvaged from ancient debris'],
-};
+
+export function vanillaIngredientLore(ingredientId: string): string[] {
+  const acquisition = ingredientAcquisitionLore(ingredientId);
+  if (acquisition.length) return acquisition;
+  return ['Crafting ingredient'];
+}
 
 export function tierLoreLine(alloyId: string): string {
   const meta = ALLOY_PLAYER_META[alloyId];
@@ -165,6 +154,8 @@ export function fragmentTabLore(alloyId: string, alloyName: string, obtain: stri
   if (meta) lines.push(tierLoreLine(alloyId));
   const source = obtain.split('—')[0]?.trim() ?? obtain;
   lines.push(`Rare bonus drop while mining (${source}).`);
+  const dropRate = fragmentDropRateLine(alloyId);
+  if (dropRate) lines.push(dropRate);
   lines.push(...fragmentIngredientLore(alloyName));
   if (meta?.enchantability) {
     lines.push(`Enchantability: ${meta.enchantability}`);
@@ -178,10 +169,6 @@ function summarizePassives(meta: AlloyPlayerMeta): string | undefined {
   );
   if (entries.length === 0) return undefined;
   return `Passives: ${entries.slice(0, 3).join(' · ')}${entries.length > 3 ? ' · …' : ''}`;
-}
-
-export function vanillaIngredientLore(ingredientId: string): string[] {
-  return VANILLA_INGREDIENT_LORE[ingredientId] ?? ['Crafting ingredient'];
 }
 
 function gearCategory(gear: GearKind): 'mining' | 'weapon' | 'bow' | 'armor' {

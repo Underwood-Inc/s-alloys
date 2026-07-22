@@ -8,12 +8,18 @@ import {
 } from '../../molecules/recipe-catalog/index.js';
 import { recipeNavTiles } from '../../molecules/recipe-nav/recipeNavCatalog.js';
 import {
+  openRecipeExplorer,
+  recipeSelectionFromQuery,
+  syncRecipeExplorerUrl,
+} from '../../molecules/recipe-explorer/openRecipeExplorer.js';
+import {
   selectionPreviewIcon,
   selectionSubtitle,
   selectionTitle,
   selectionTooltip,
 } from '../../molecules/recipe-selection/recipeSelection.js';
 import '../crafting-grid/crafting-grid.js';
+import '../item-preview/item-preview.js';
 
 /**
  * Recipe browser — ingot strip + category strip + live preview + crafting grid.
@@ -28,12 +34,18 @@ export class RecipeExplorer extends HTMLElement {
   }
 
   connectedCallback() {
-    const initialAlloy = this.getAttribute('initial-alloy');
-    if (initialAlloy && ALLOY_CATALOG.some((alloy) => alloy.id === initialAlloy)) {
-      this.alloyId = initialAlloy;
+    const fromQuery = recipeSelectionFromQuery();
+    if (fromQuery) {
+      this.alloyId = fromQuery.alloyId;
+      this.tab = fromQuery.tab;
+    } else {
+      const initialAlloy = this.getAttribute('initial-alloy');
+      if (initialAlloy && ALLOY_CATALOG.some((alloy) => alloy.id === initialAlloy)) {
+        this.alloyId = initialAlloy;
+      }
+      const initialTab = this.getAttribute('initial-tab') as RecipeTabId | null;
+      if (initialTab) this.tab = initialTab;
     }
-    const initialTab = this.getAttribute('initial-tab') as RecipeTabId | null;
-    if (initialTab) this.tab = initialTab;
     if (!this.shellReady) this.renderShell();
     this.refresh();
   }
@@ -65,7 +77,12 @@ export class RecipeExplorer extends HTMLElement {
         <div class="recipe-explorer__row recipe-explorer__row--ingots" role="group" aria-label="Choose alloy"></div>
 
         <div class="recipe-explorer__preview" aria-live="polite">
-          <img class="recipe-explorer__preview-icon" alt="" width="72" height="72" />
+          <item-preview
+            class="recipe-explorer__preview-icon"
+            icon=""
+            alt=""
+            navigate="false"
+          ></item-preview>
           <div class="recipe-explorer__preview-copy">
             <h4 class="recipe-explorer__preview-title"></h4>
             <p class="recipe-explorer__preview-sub"></p>
@@ -87,6 +104,7 @@ export class RecipeExplorer extends HTMLElement {
       const tabs = recipeTabsForAlloy(this.currentAlloy());
       if (!tabs.includes(this.tab)) this.tab = 'ingot';
       this.refresh();
+      syncRecipeExplorerUrl({ alloyId: this.alloyId, tab: this.tab });
     });
 
     this.querySelector('.recipe-explorer__row--kinds')?.addEventListener('click', (event) => {
@@ -94,6 +112,7 @@ export class RecipeExplorer extends HTMLElement {
       if (!button?.dataset.tabId) return;
       this.tab = button.dataset.tabId as RecipeTabId;
       this.refresh();
+      syncRecipeExplorerUrl({ alloyId: this.alloyId, tab: this.tab });
     });
 
     this.shellReady = true;
@@ -115,10 +134,15 @@ export class RecipeExplorer extends HTMLElement {
 
       const open = () => showGameTooltip(element, tooltip);
       const close = () => hideGameTooltip(element);
+      const navigate = (event: MouseEvent) => {
+        if (event.defaultPrevented) return;
+        openRecipeExplorer({ alloyId: id, tab: 'ingot' });
+      };
       element.onmouseenter = open;
       element.onfocus = open;
       element.onmouseleave = close;
       element.onblur = close;
+      element.onclick = navigate;
     });
 
     this.querySelectorAll<HTMLElement>('[data-tab-id]').forEach((element) => {
@@ -127,10 +151,15 @@ export class RecipeExplorer extends HTMLElement {
       const tooltip = selectionTooltip(alloy, tabId, baseUrl);
       const open = () => showGameTooltip(element, tooltip);
       const close = () => hideGameTooltip(element);
+      const navigate = (event: MouseEvent) => {
+        if (event.defaultPrevented) return;
+        openRecipeExplorer({ alloyId: alloy.id, tab: tabId });
+      };
       element.onmouseenter = open;
       element.onfocus = open;
       element.onmouseleave = close;
       element.onblur = close;
+      element.onclick = navigate;
     });
   }
 
@@ -181,10 +210,18 @@ export class RecipeExplorer extends HTMLElement {
       }).join('');
     }
 
-    const previewIcon = this.querySelector<HTMLImageElement>('.recipe-explorer__preview-icon');
+    const previewIcon = this.querySelector('item-preview.recipe-explorer__preview-icon');
+    const previewSrc = selectionPreviewIcon({ alloyId: alloy.id, tab: this.tab }, baseUrl);
+    const previewModelId = this.tab === 'ingot'
+      ? `ingot:${alloy.id}`
+      : this.tab === 'fragment'
+        ? `fragment:${alloy.id}`
+        : `gear:${alloy.id}:${this.tab}`;
     if (previewIcon) {
-      previewIcon.src = selectionPreviewIcon({ alloyId: alloy.id, tab: this.tab }, baseUrl);
-      previewIcon.alt = selectionTitle(alloy, this.tab);
+      previewIcon.setAttribute('icon', previewSrc);
+      previewIcon.setAttribute('model-id', previewModelId);
+      previewIcon.setAttribute('alt', selectionTitle(alloy, this.tab));
+      previewIcon.setAttribute('navigate', 'true');
     }
 
     const previewTitle = this.querySelector('.recipe-explorer__preview-title');
@@ -202,6 +239,7 @@ export class RecipeExplorer extends HTMLElement {
     }
 
     this.bindPickerTooltips();
+    syncRecipeExplorerUrl({ alloyId: alloy.id, tab: this.tab });
   }
 }
 

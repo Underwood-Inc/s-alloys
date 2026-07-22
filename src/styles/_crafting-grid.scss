@@ -90,6 +90,15 @@
   }
 }
 
+.crafting-grid__slot--navigable {
+  cursor: pointer;
+
+  &:hover img,
+  &:focus-visible img {
+    filter: drop-shadow(0 0 6px rgb(244 200 106 / 55%));
+  }
+}
+
 .crafting-grid__icon {
   display: grid;
   place-items: center;

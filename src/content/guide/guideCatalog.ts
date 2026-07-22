@@ -11,7 +11,8 @@ export interface GuideArticle {
 export function renderGuideHtml(body: string, baseUrl: string): string {
   return body
     .replaceAll('{{base}}', baseUrl)
-    .replace('{{recipe-explorer}}', `<recipe-explorer asset-base="${baseUrl}"></recipe-explorer>`);
+    .replace('{{recipe-explorer}}', `<recipe-explorer asset-base="${baseUrl}"></recipe-explorer>`)
+    .replace('{{fragment-showcase}}', `<fragment-showcase asset-base="${baseUrl}"></fragment-showcase>`);
 }
 
 export const GUIDE_ARTICLES: GuideArticle[] = [
@@ -56,12 +57,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
       {{recipe-explorer}}
       <h2>Fragments</h2>
       <p>Four alloys can drop matching fragments while you break vanilla ore blocks. Nine fragments of the same type combine into one ingot in a crafting grid. Fragments cannot be smelted.</p>
-      <ul>
-        <li><strong>Cobalt</strong> — coal, copper, and lapis veins</li>
-        <li><strong>Nickel</strong> — iron veins</li>
-        <li><strong>Mythril</strong> — redstone and emerald veins</li>
-        <li><strong>Adamantine</strong> — diamond ore and ancient debris</li>
-      </ul>
+      {{fragment-showcase}}
       <p>Every fragment alloy also has a shaped crafting recipe using common overworld materials, so you are never hard-locked to RNG.</p>
     `,
   },

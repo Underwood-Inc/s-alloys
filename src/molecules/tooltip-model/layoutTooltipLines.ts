@@ -39,6 +39,21 @@ export function parseStatToken(text: string): TooltipStatEntry | undefined {
   const enchant = trimmed.match(/^Enchantability:\s*(.+)$/i);
   if (enchant) return { key: 'Enchantability', value: enchant[1].trim() };
 
+  const dropRate = trimmed.match(/^Drop rate:\s*(.+)$/i);
+  if (dropRate) return { key: 'Drop rate', value: dropRate[1].trim() };
+
+  const bestY = trimmed.match(/^Best Y:\s*(.+)$/i);
+  if (bestY) return { key: 'Best Y', value: bestY[1].trim() };
+
+  const spawns = trimmed.match(/^Spawns:\s*(.+)$/i);
+  if (spawns) return { key: 'Spawns', value: spawns[1].trim() };
+
+  const obtain = trimmed.match(/^Obtain:\s*(.+)$/i);
+  if (obtain) return { key: 'Obtain', value: obtain[1].trim() };
+
+  const foundIn = trimmed.match(/^Found in:\s*(.+)$/i);
+  if (foundIn) return { key: 'Found in', value: foundIn[1].trim() };
+
   const ingots = trimmed.match(/^(\d+)\s+ingot\(s\)$/i);
   if (ingots) return { key: 'Cost', value: `${ingots[1]} ingots` };
 

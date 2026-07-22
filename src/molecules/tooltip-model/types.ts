@@ -17,6 +17,12 @@ export interface TooltipLine {
   italic?: boolean;
 }
 
+export interface TooltipOreSource {
+  ingredientId: string;
+  label: string;
+  icon: string;
+}
+
 export interface GameTooltipData {
   title: string;
   icon: string;
@@ -24,6 +30,8 @@ export interface GameTooltipData {
   /** Optional glTF registry id — falls back to sprite extrusion when absent. */
   modelId?: string;
   lines: TooltipLine[];
+  /** Fragment tooltips — hoverable ore chips open child mining tooltips. */
+  oreSources?: TooltipOreSource[];
 }
 
 export interface TooltipShowDetail {

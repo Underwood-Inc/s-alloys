@@ -1,69 +1,29 @@
 import {
-  computeViewportTooltipPosition,
-  type ViewportTooltipPlacement,
-} from './viewportTooltipPosition.js';
+  applyViewportTooltipAnchor,
+  clearViewportTooltipAnchor,
+  parseViewportTooltipPlacement,
+} from './applyViewportTooltipAnchor.js';
+import { portalViewportPanel, unportalViewportPanel } from './portalViewportPanel.js';
+import { VIEWPORT_TOOLTIP_HIDE_DELAY_MS } from './viewportTooltipConstants.js';
+import {
+  canCloseTooltipLayer,
+  closeTooltipLayer,
+  forceCloseTooltipLayer,
+  openTooltipLayer,
+  subscribeTooltipLayerChildClosed,
+} from '../tooltip-stack/tooltipLayerStack.js';
 
 const TRIGGER_SELECTOR = '[data-viewport-tooltip]';
 const PANEL_SELECTOR = '[data-viewport-tooltip-panel], [role="tooltip"]';
-export const VIEWPORT_TOOLTIP_HIDE_DELAY_MS = 280;
+
+export { VIEWPORT_TOOLTIP_HIDE_DELAY_MS };
 
 function prefersHover(): boolean {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
-function parsePlacement(value: string | undefined): ViewportTooltipPlacement[] | undefined {
-  if (!value) return undefined;
-  const allowed: ViewportTooltipPlacement[] = ['top', 'right', 'bottom', 'left'];
-  const parsed = value
-    .split(',')
-    .map((part) => part.trim())
-    .filter((part): part is ViewportTooltipPlacement => allowed.includes(part as ViewportTooltipPlacement));
-  return parsed.length ? parsed : undefined;
-}
-
 function getTooltipPanel(trigger: HTMLElement): HTMLElement | null {
   return trigger.querySelector<HTMLElement>(PANEL_SELECTOR);
-}
-
-const tooltipPortals = new WeakMap<HTMLElement, Comment>();
-
-function portalTooltip(tooltip: HTMLElement) {
-  if (tooltipPortals.has(tooltip)) return;
-  const placeholder = document.createComment('viewport-tooltip');
-  tooltip.before(placeholder);
-  tooltipPortals.set(tooltip, placeholder);
-  tooltip.dataset.portaled = 'true';
-  document.body.appendChild(tooltip);
-}
-
-function unportalTooltip(tooltip: HTMLElement) {
-  const placeholder = tooltipPortals.get(tooltip);
-  if (!placeholder) return;
-  placeholder.replaceWith(tooltip);
-  tooltipPortals.delete(tooltip);
-  tooltip.removeAttribute('data-portaled');
-}
-
-function positionTooltip(trigger: HTMLElement, tooltip: HTMLElement) {
-  const preferred = parsePlacement(trigger.dataset.tooltipPlacement);
-  const anchor = trigger.getBoundingClientRect();
-  const margin = 12;
-  tooltip.style.visibility = 'hidden';
-  const size = tooltip.getBoundingClientRect();
-  const coords = computeViewportTooltipPosition(
-    anchor,
-    { width: size.width, height: size.height },
-    { width: window.innerWidth, height: window.innerHeight },
-    { preferred, margin },
-  );
-  tooltip.style.position = 'fixed';
-  tooltip.style.top = `${coords.top}px`;
-  tooltip.style.left = `${coords.left}px`;
-  tooltip.style.right = 'auto';
-  tooltip.style.bottom = 'auto';
-  tooltip.style.transform = 'none';
-  tooltip.style.visibility = 'visible';
-  tooltip.dataset.placement = coords.placement;
 }
 
 function containsTarget(trigger: HTMLElement, tooltip: HTMLElement, target: EventTarget | null): boolean {
@@ -75,6 +35,7 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
   if (!triggers.length) return () => {};
 
   const triggerTooltips = new WeakMap<HTMLElement, HTMLElement>();
+  const triggerLayerIds = new WeakMap<HTMLElement, number>();
   let activeTrigger: HTMLElement | null = null;
   let pinnedTrigger: HTMLElement | null = null;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -90,17 +51,19 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
   const hideTooltip = (trigger: HTMLElement) => {
     const tooltip = triggerTooltips.get(trigger);
     if (!tooltip) return;
+
+    const layerId = triggerLayerIds.get(trigger);
+    if (layerId !== undefined && !canCloseTooltipLayer(layerId)) return;
+
     tooltip.classList.remove('is-open', 'is-pinned');
-    unportalTooltip(tooltip);
+    unportalViewportPanel(tooltip);
+    clearViewportTooltipAnchor(tooltip);
     tooltip.style.display = '';
-    tooltip.style.visibility = '';
-    tooltip.style.position = '';
-    tooltip.style.top = '';
-    tooltip.style.left = '';
-    tooltip.style.right = '';
-    tooltip.style.bottom = '';
-    tooltip.style.transform = '';
     trigger.setAttribute('aria-expanded', 'false');
+    if (layerId !== undefined) {
+      closeTooltipLayer(layerId);
+      triggerLayerIds.delete(trigger);
+    }
     if (pinnedTrigger === trigger) pinnedTrigger = null;
     if (activeTrigger === trigger) activeTrigger = null;
   };
@@ -124,12 +87,22 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     tooltip.classList.toggle('is-pinned', pinnedTrigger === trigger);
     tooltip.classList.add('is-open');
     trigger.setAttribute('aria-expanded', 'true');
-    portalTooltip(tooltip);
-    positionTooltip(trigger, tooltip);
+    portalViewportPanel(tooltip);
+    const previousLayerId = triggerLayerIds.get(trigger);
+    if (previousLayerId !== undefined) closeTooltipLayer(previousLayerId);
+    triggerLayerIds.set(
+      trigger,
+      openTooltipLayer({ kind: 'viewport-panel', anchor: trigger, surface: tooltip }),
+    );
+    applyViewportTooltipAnchor(trigger, tooltip, {
+      preferred: parseViewportTooltipPlacement(trigger.dataset.tooltipPlacement),
+    });
   };
 
   const scheduleHide = (trigger: HTMLElement) => {
     if (pinnedTrigger === trigger) return;
+    const layerId = triggerLayerIds.get(trigger);
+    if (layerId !== undefined && !canCloseTooltipLayer(layerId)) return;
     cancelHide();
     hideTimer = setTimeout(() => {
       hideTimer = null;
@@ -156,7 +129,9 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     if (!activeTrigger) return;
     const tooltip = triggerTooltips.get(activeTrigger);
     if (!tooltip?.classList.contains('is-open')) return;
-    positionTooltip(activeTrigger, tooltip);
+    applyViewportTooltipAnchor(activeTrigger, tooltip, {
+      preferred: parseViewportTooltipPlacement(activeTrigger.dataset.tooltipPlacement),
+    });
   };
 
   for (const trigger of triggers) {
@@ -226,7 +201,7 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
       tooltip.removeEventListener('mouseleave', onPanelMouseLeave);
       tooltip.removeEventListener('pointerdown', onPanelPointerDown);
       hideTooltip(trigger);
-      triggerTooltips.delete(trigger);
+      triggerLayerIds.delete(trigger);
     });
   }
 
@@ -242,6 +217,15 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     if (event.key === 'Escape' && activeTrigger) hideAll();
   };
 
+  const unsubscribeChildClosed = subscribeTooltipLayerChildClosed((parentId) => {
+    for (const trigger of triggers) {
+      if (triggerLayerIds.get(trigger) !== parentId) continue;
+      const tooltip = triggerTooltips.get(trigger);
+      if (tooltip?.matches(':hover') || trigger.matches(':hover')) return;
+      scheduleHide(trigger);
+    }
+  });
+
   window.addEventListener('resize', onViewportChange);
   window.addEventListener('scroll', onViewportChange, true);
   document.addEventListener('pointerdown', onDocumentPointerDown);
@@ -252,7 +236,12 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     window.removeEventListener('scroll', onViewportChange, true);
     document.removeEventListener('pointerdown', onDocumentPointerDown);
     document.removeEventListener('keydown', onDocumentKeyDown);
+    unsubscribeChildClosed();
     cancelHide();
+    for (const trigger of triggers) {
+      const layerId = triggerLayerIds.get(trigger);
+      if (layerId !== undefined) forceCloseTooltipLayer(layerId);
+    }
     cleanups.forEach((cleanup) => cleanup());
     activeTrigger = null;
     pinnedTrigger = null;

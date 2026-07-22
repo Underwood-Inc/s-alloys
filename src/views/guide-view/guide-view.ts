@@ -3,6 +3,7 @@ import { navigate } from '../../organisms/site-header/site-header.js';
 import { GUIDE_ARTICLES, getGuideArticle, renderGuideHtml } from '../../content/guide/guideCatalog.js';
 import { currentAppPath, resolveRoute } from '../../app/router.js';
 import '../../organisms/recipe-explorer/recipe-explorer.js';
+import '../../organisms/fragment-showcase/fragment-showcase.js';
 
 const assetBase = `${import.meta.env.BASE_URL}`;
 

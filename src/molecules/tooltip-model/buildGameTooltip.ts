@@ -6,9 +6,11 @@ import {
   tierLoreLine,
   vanillaIngredientLore,
 } from '../recipe-catalog/alloyPlayerLore.js';
+import { FRAGMENT_DROP_META } from '../recipe-catalog/fragmentDropCatalog.js';
+import { ingredient, type IngredientId } from '../recipe-catalog/ingredients.js';
+import { ingredientSourceLabel } from '../recipe-catalog/ingredientAcquisitionCatalog.js';
 import type { GearKind } from '../recipe-catalog/gearLayouts.js';
-import type { IngredientId } from '../recipe-catalog/ingredients.js';
-import type { GameTooltipData, TooltipLine, TooltipRarity } from './types.js';
+import type { GameTooltipData, TooltipLine, TooltipOreSource, TooltipRarity } from './types.js';
 
 function rarityForAlloy(alloyId: string): TooltipRarity {
   const band = ALLOY_PLAYER_META[alloyId]?.tierBand;
@@ -42,7 +44,17 @@ function loreStringsToLines(lore: string[]): TooltipLine[] {
       }
       continue;
     }
-    if (text.startsWith('Enchantability:') || text.includes('Dur ') || text.includes('Armor ') || text.includes('Mining')) {
+    if (
+      text.startsWith('Drop rate:')
+      || text.startsWith('Obtain:')
+      || text.startsWith('Found in:')
+      || text.startsWith('Best Y:')
+      || text.startsWith('Spawns:')
+      || text.startsWith('Enchantability:')
+      || text.includes('Dur ')
+      || text.includes('Armor ')
+      || text.includes('Mining')
+    ) {
       for (const part of text.split(/\s*·\s*/)) {
         if (part) lines.push({ kind: 'stat', text: part });
       }
@@ -64,11 +76,28 @@ export function buildIngotTooltip(alloyId: string, alloyName: string, icon: stri
   };
 }
 
+function fragmentOreSources(alloyId: string, baseUrl: string): TooltipOreSource[] | undefined {
+  const drop = FRAGMENT_DROP_META[alloyId];
+  if (!drop) return undefined;
+
+  const root = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  return drop.oreIngredients.map((id) => {
+    const base = ingredient(id, root);
+    const guide = ingredientSourceLabel(id);
+    return {
+      ingredientId: id,
+      label: guide ?? base.label,
+      icon: base.icon,
+    };
+  });
+}
+
 export function buildFragmentTooltip(
   alloyId: string,
   alloyName: string,
   icon: string,
   obtain = '',
+  baseUrl = '/',
 ): GameTooltipData {
   return {
     title: `${alloyName} Fragment`,
@@ -76,6 +105,7 @@ export function buildFragmentTooltip(
     rarity: rarityForAlloy(alloyId),
     modelId: `fragment:${alloyId}`,
     lines: loreStringsToLines(fragmentTabLore(alloyId, alloyName, obtain)),
+    oreSources: fragmentOreSources(alloyId, baseUrl),
   };
 }
 

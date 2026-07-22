@@ -1,6 +1,8 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
 import { hideGameTooltip, showGameTooltip } from '../../atoms/tooltip/dispatchTooltip.js';
+import { openRecipeExplorer } from '../../molecules/recipe-explorer/openRecipeExplorer.js';
 import { recipeToGrid, type CraftingRecipeView, type IngredientView } from '../../molecules/crafting-model/index.js';
+import { recipeSelectionFromIngredient } from '../../molecules/recipe-selection/recipeSelection.js';
 import { resultSlotIndex, slotItemsForRecipe } from '../../molecules/crafting-model/slotItems.js';
 import type { GameTooltipData } from '../../molecules/tooltip-model/types.js';
 
@@ -66,15 +68,26 @@ export class CraftingGrid extends HTMLElement {
       if (!item) return;
 
       const tooltip = tooltipForItem(item);
-      if (!tooltip) return;
+      const selection = recipeSelectionFromIngredient(item);
 
-      const open = () => showGameTooltip(element, tooltip);
-      const close = () => hideGameTooltip(element);
+      if (tooltip) {
+        const open = () => showGameTooltip(element, tooltip);
+        const close = () => hideGameTooltip(element);
+        element.addEventListener('mouseenter', open);
+        element.addEventListener('focus', open);
+        element.addEventListener('mouseleave', close);
+        element.addEventListener('blur', close);
+      }
 
-      element.addEventListener('mouseenter', open);
-      element.addEventListener('focus', open);
-      element.addEventListener('mouseleave', close);
-      element.addEventListener('blur', close);
+      if (selection) {
+        element.classList.add('crafting-grid__slot--navigable');
+        element.setAttribute('title', 'Open in recipe explorer');
+        const navigate = (event: MouseEvent) => {
+          if (event.defaultPrevented) return;
+          openRecipeExplorer(selection);
+        };
+        element.addEventListener('click', navigate);
+      }
     });
   }
 

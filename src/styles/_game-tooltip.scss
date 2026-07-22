@@ -19,6 +19,10 @@ game-tooltip-host {
   &[hidden] {
     display: none;
   }
+
+  &--child {
+    z-index: 1;
+  }
 }
 
 .game-tooltip {
@@ -225,6 +229,12 @@ game-tooltip-host {
 
 .game-tooltip__meta {
   display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.game-tooltip__meta-row {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.28rem;
   align-items: center;
@@ -252,12 +262,18 @@ game-tooltip-host {
     border-color: color-mix(in srgb, var(--tooltip-border) 45%, transparent);
   }
 
-  &--muted {
-    font-style: italic;
-    font-weight: 400;
-    color: #9a9a9a;
-    background: transparent;
-    border-color: rgb(255 255 255 / 10%);
+  &--enchant {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    color: #a8c0ff;
+    background: rgb(107 140 255 / 10%);
+    border-color: rgb(107 140 255 / 22%);
+
+    .game-tooltip__meta-chip-value {
+      font-weight: 700;
+      color: #d0e0ff;
+    }
   }
 }
 
@@ -317,36 +333,6 @@ game-tooltip-host {
     font-variant-numeric: tabular-nums;
     color: #e0e0e0;
   }
-}
-
-.game-tooltip__stat-compact {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  width: fit-content;
-  max-width: 100%;
-  margin-top: 0.15rem;
-  padding: 0.28rem 0.5rem;
-  border-radius: 5px;
-  background: rgb(107 140 255 / 10%);
-  border: 1px solid rgb(107 140 255 / 22%);
-}
-
-.game-tooltip__stat-compact-label {
-  font-family: var(--font);
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #8ea4ff;
-}
-
-.game-tooltip__stat-compact-value {
-  font-family: var(--font);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: #b8d0ff;
 }
 
 .game-tooltip__enchant-list,
@@ -410,6 +396,56 @@ game-tooltip-host {
   color: #d8cce8;
 }
 
+.game-tooltip__ore-hint {
+  margin: 0 0 0.5rem;
+  font-family: var(--font);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: rgb(255 255 255 / 55%);
+}
+
+.game-tooltip__ore-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-tooltip__ore-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.45rem 0.2rem 0.25rem;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 25%);
+  color: #e8e0f4;
+  font-family: var(--font);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: color-mix(in srgb, var(--tooltip-accent) 55%, transparent);
+    background: rgb(255 255 255 / 8%);
+    outline: none;
+  }
+}
+
+.game-tooltip__ore-icon {
+  width: 1rem;
+  height: 1rem;
+  image-rendering: pixelated;
+}
+
+.game-tooltip__ore-label {
+  white-space: nowrap;
+}
+
 .sprite-extrusion-view {
   display: block;
   width: 100%;
@@ -428,6 +464,19 @@ game-tooltip-host {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.item-preview--navigable {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: box-shadow 140ms ease, transform 140ms ease;
+
+  &:hover,
+  &:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--tooltip-accent, #f4c86a) 55%, transparent);
+    outline: none;
+    transform: translateY(-1px);
+  }
 }
 
 .item-preview__gltf {

@@ -93,7 +93,7 @@ function resolveKeys(
       resolved[symbol] = withTooltip(base, buildIngotTooltip(alloy.id, alloy.name, base.icon));
     } else if (id === 'alloy_fragment') {
       const base = alloyFragmentIngredient(alloy.id, alloy.name, baseUrl);
-      resolved[symbol] = withTooltip(base, buildFragmentTooltip(alloy.id, alloy.name, base.icon, alloy.obtain));
+      resolved[symbol] = withTooltip(base, buildFragmentTooltip(alloy.id, alloy.name, base.icon, alloy.obtain, baseUrl));
     } else {
       const base = ingredient(id, baseUrl);
       resolved[symbol] = withTooltip(base, buildVanillaIngredientTooltip(id, base.label, base.icon));
@@ -136,7 +136,7 @@ export function buildRecipeForTab(
     const fragmentBase = alloyFragmentIngredient(alloy.id, alloy.name, baseUrl);
     const fragment = withTooltip(
       fragmentBase,
-      buildFragmentTooltip(alloy.id, alloy.name, fragmentBase.icon, alloy.obtain),
+      buildFragmentTooltip(alloy.id, alloy.name, fragmentBase.icon, alloy.obtain, baseUrl),
     );
     return {
       kind: 'shaped',
