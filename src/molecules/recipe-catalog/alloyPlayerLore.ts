@@ -126,7 +126,7 @@ export function tierLoreLine(alloyId: string): string {
   const meta = ALLOY_PLAYER_META[alloyId];
   if (!meta) return '';
   const band = TIER_LABELS[meta.tierBand] ?? meta.tierBand;
-  return `Tier: ${band} · Step ${meta.tier} · ≈${meta.vanillaTier}`;
+  return `Tier: ${band} · Tier ${meta.tier} · ≈${meta.vanillaTier}`;
 }
 
 export function ingotResultLore(alloyId: string): string[] {

@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { layoutTooltipLines, parseStatToken, parseTierLine } from './layoutTooltipLines.js';
 
 test('[FR-008] parseTierLine extracts tier step and baseline', () => {
-  expect(parseTierLine('Tier: Uncommon · Step 3 · ≈iron')).toEqual({
+  expect(parseTierLine('Tier: Uncommon · Tier 3 · ≈iron')).toEqual({
     tier: 'Uncommon',
     step: '3',
     baseline: 'iron',
@@ -17,7 +17,7 @@ test('[FR-008] parseStatToken splits gear stat tokens', () => {
 
 test('[FR-008] layoutTooltipLines groups lore into sections', () => {
   const layout = layoutTooltipLines([
-    { kind: 'tier', text: 'Tier: Common · Step 1 · ≈copper' },
+    { kind: 'tier', text: 'Tier: Common · Tier 1 · ≈copper' },
     { kind: 'body', text: '3 copper ingots + clay' },
     { kind: 'stat', text: 'Armor 1.0 · Tough 0.0 · Dur 216 · 4 ingot(s)' },
     { kind: 'stat', text: 'Enchantability: 13' },

@@ -2,7 +2,7 @@ import { test, expect } from 'vitest';
 import { renderGameTooltipBody, renderGameTooltipMeta } from './renderGameTooltipBody.js';
 
 const sampleLines = [
-  { kind: 'tier' as const, text: 'Tier: Uncommon · Step 3 · ≈iron' },
+  { kind: 'tier' as const, text: 'Tier: Uncommon · Tier 3 · ≈iron' },
   { kind: 'body' as const, text: '2 iron ingots + coal + copper ingot' },
   { kind: 'stat' as const, text: 'Enchantability: 14' },
   { kind: 'passive' as const, text: 'boots: Swift step' },

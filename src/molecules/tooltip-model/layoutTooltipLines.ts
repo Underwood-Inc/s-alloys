@@ -24,7 +24,7 @@ export interface TooltipLineLayout {
   passives: TooltipPassiveEntry[];
 }
 
-const TIER_PATTERN = /^Tier:\s*(.+?)\s*·\s*Step\s+(\d+)\s*·\s*≈(.+)$/i;
+const TIER_PATTERN = /^Tier:\s*(.+?)\s*·\s*Tier\s+(\d+)\s*·\s*≈(.+)$/i;
 
 export function parseTierLine(text: string): TooltipTierMeta | undefined {
   const match = text.match(TIER_PATTERN);
