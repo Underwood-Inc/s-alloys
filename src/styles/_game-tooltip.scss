@@ -147,15 +147,17 @@ game-tooltip-host {
 }
 
 .game-tooltip__header {
+  --tooltip-preview-size: 5rem;
+
   display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 0.5rem;
+  grid-template-columns: var(--tooltip-preview-size) 1fr;
+  gap: 0.65rem;
   align-items: center;
 }
 
 .game-tooltip__preview {
-  width: 40px;
-  height: 40px;
+  width: var(--tooltip-preview-size);
+  height: var(--tooltip-preview-size);
   filter: drop-shadow(0 2px 6px rgb(0 0 0 / 50%));
 }
 
@@ -247,45 +249,24 @@ game-tooltip-host {
   }
 }
 
-/* ── item preview (3D sway) ── */
-.item-preview {
-  display: grid;
-  place-items: center;
+.sprite-extrusion-view {
+  display: block;
   width: 100%;
   height: 100%;
 }
 
-.item-preview__stage {
+.sprite-extrusion-view__canvas {
+  display: block;
   width: 100%;
   height: 100%;
-  perspective: 220px;
-}
-
-.item-preview__extrude {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  animation: item-preview-sway 2.8s ease-in-out infinite;
-}
-
-.item-preview__sprite {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 3px 6px rgb(0 0 0 / 55%));
+}
 
-  &--back {
-    transform: translateZ(-6px) scale(0.96);
-    opacity: 0.45;
-  }
-
-  &--face {
-    transform: translateZ(4px);
-  }
+/* ── item preview ── */
+.item-preview {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .item-preview__gltf {
@@ -297,15 +278,4 @@ game-tooltip-host {
 
 .item-preview__fallback {
   display: none;
-}
-
-@keyframes item-preview-sway {
-  0%,
-  100% {
-    transform: rotateY(-22deg);
-  }
-
-  50% {
-    transform: rotateY(22deg);
-  }
 }

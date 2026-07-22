@@ -1,12 +1,14 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
 import { getItemModel } from '../../molecules/item-model-registry/itemModelRegistry.js';
+import { parseSpriteExtrusionKind } from '../../molecules/sprite-extrusion/spriteExtrusionCatalog.js';
+import '../sprite-extrusion-view/sprite-extrusion-view.js';
 
 /**
- * Rotating item preview — CSS sprite extrusion by default, optional glTF/GLB via registry.
+ * Rotating item preview — sprite-extrusion canvas by default, optional glTF/GLB via registry.
  */
 export class ItemPreview extends HTMLElement {
   static get observedAttributes() {
-    return ['icon', 'model-id', 'alt'];
+    return ['icon', 'model-id', 'extrusion-kind', 'alt'];
   }
 
   connectedCallback() {
@@ -21,6 +23,7 @@ export class ItemPreview extends HTMLElement {
     const icon = this.getAttribute('icon') ?? '';
     const modelId = this.getAttribute('model-id') ?? undefined;
     const alt = this.getAttribute('alt') ?? '';
+    const kind = parseSpriteExtrusionKind(this.getAttribute('extrusion-kind') ?? undefined);
     const entry = getItemModel(modelId);
 
     this.className = 'item-preview';
@@ -32,7 +35,10 @@ export class ItemPreview extends HTMLElement {
           src="${escapeHtml(entry.src)}"
           alt="${escapeHtml(alt)}"
           auto-rotate
-          rotation-per-second="28deg"
+          rotation-per-second="36deg"
+          camera-orbit="0deg 90deg auto"
+          min-camera-orbit="auto 90deg auto"
+          max-camera-orbit="auto 90deg auto"
           interaction-prompt="none"
           shadow-intensity="0.85"
           environment-image="neutral"
@@ -41,18 +47,22 @@ export class ItemPreview extends HTMLElement {
           touch-action="none"
           aria-hidden="${alt ? 'false' : 'true'}"
         ></model-viewer>
-        <img class="item-preview__fallback" src="${escapeHtml(entry.sprite || icon)}" alt="${escapeHtml(alt)}" />
+        <sprite-extrusion-view
+          class="item-preview__fallback"
+          src="${escapeHtml(entry.sprite || icon)}"
+          kind="${escapeHtml(kind)}"
+          alt="${escapeHtml(alt)}"
+        ></sprite-extrusion-view>
       `;
       return;
     }
 
     this.innerHTML = `
-      <div class="item-preview__stage" aria-hidden="${alt ? 'false' : 'true'}">
-        <div class="item-preview__extrude">
-          <img class="item-preview__sprite item-preview__sprite--back" src="${escapeHtml(icon)}" alt="" />
-          <img class="item-preview__sprite item-preview__sprite--face" src="${escapeHtml(icon)}" alt="${escapeHtml(alt)}" />
-        </div>
-      </div>
+      <sprite-extrusion-view
+        src="${escapeHtml(icon)}"
+        kind="${escapeHtml(kind)}"
+        alt="${escapeHtml(alt)}"
+      ></sprite-extrusion-view>
     `;
   }
 }
