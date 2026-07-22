@@ -15,3 +15,5 @@ export {
 } from './buildGameTooltip.js';
 export { rarityStyle, TOOLTIP_RARITY_STYLES } from './rarityCatalog.js';
 export type { TooltipRarityStyle } from './rarityCatalog.js';
+export { layoutTooltipLines, parseStatToken, parseTierLine } from './layoutTooltipLines.js';
+export { renderGameTooltipBody, renderGameTooltipMeta } from './renderGameTooltipBody.js';

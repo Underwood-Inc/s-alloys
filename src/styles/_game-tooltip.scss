@@ -152,7 +152,15 @@ game-tooltip-host {
   display: grid;
   grid-template-columns: var(--tooltip-preview-size) 1fr;
   gap: 0.65rem;
-  align-items: center;
+  align-items: start;
+}
+
+.game-tooltip__headline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+  padding-top: 0.15rem;
 }
 
 .game-tooltip__preview {
@@ -175,11 +183,11 @@ game-tooltip-host {
 
 .game-tooltip__divider {
   height: 1px;
-  margin: 0.45rem 0 0.4rem;
+  margin: 0.55rem 0 0.5rem;
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in srgb, var(--tooltip-border) 70%, transparent),
+    color-mix(in srgb, var(--tooltip-border) 55%, transparent),
     transparent
   );
 }
@@ -189,7 +197,7 @@ game-tooltip-host {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding-right: 0.35rem;
+  padding-right: 0.2rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--tooltip-border) 60%, transparent) transparent;
 
@@ -203,50 +211,203 @@ game-tooltip-host {
   }
 }
 
-.game-tooltip__lines {
+.game-tooltip__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.game-tooltip__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.game-tooltip__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  align-items: center;
+}
+
+.game-tooltip__meta-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.14rem 0.45rem;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #c4c4c4;
+  background: rgb(0 0 0 / 22%);
+  border: 1px solid rgb(255 255 255 / 8%);
+
+  &--rarity {
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--tooltip-title);
+    background: color-mix(in srgb, var(--tooltip-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--tooltip-border) 45%, transparent);
+  }
+
+  &--muted {
+    font-style: italic;
+    font-weight: 400;
+    color: #9a9a9a;
+    background: transparent;
+    border-color: rgb(255 255 255 / 10%);
+  }
+}
+
+.game-tooltip__section--desc {
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.game-tooltip__desc {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #c4c4c4;
+}
+
+.game-tooltip__section-label {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tooltip-accent) 60%, #888);
+}
+
+.game-tooltip__stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.game-tooltip__stat {
+  margin: 0;
+  padding: 0.32rem 0.42rem;
+  border-radius: 5px;
+  background: rgb(0 0 0 / 18%);
+  border: 1px solid rgb(255 255 255 / 6%);
+
+  dt {
+    margin: 0;
+    font-family: var(--font);
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8a8a8a;
+  }
+
+  dd {
+    margin: 0.1rem 0 0;
+    font-family: var(--font);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #e0e0e0;
+  }
+}
+
+.game-tooltip__stat-compact {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.15rem;
+  padding: 0.28rem 0.5rem;
+  border-radius: 5px;
+  background: rgb(107 140 255 / 10%);
+  border: 1px solid rgb(107 140 255 / 22%);
+}
+
+.game-tooltip__stat-compact-label {
+  font-family: var(--font);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8ea4ff;
+}
+
+.game-tooltip__stat-compact-value {
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #b8d0ff;
+}
+
+.game-tooltip__enchant-list,
+.game-tooltip__passive-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  font-family: var(--font);
-  font-size: 0.875rem;
-  line-height: 1.55;
-  letter-spacing: 0.01em;
-  text-transform: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.game-tooltip__line {
-  margin: 0.28rem 0 0;
+.game-tooltip__enchant {
+  padding: 0.28rem 0;
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: #d4d4d4;
+  border-bottom: 1px solid rgb(255 255 255 / 5%);
 
-  &--tier {
-    color: #b0b0b0;
-    font-size: 0.8125rem;
-    font-style: italic;
+  &:last-child {
+    border-bottom: none;
   }
 
-  &--body {
-    color: #c8c8c8;
-    font-style: normal;
+  &::before {
+    content: '◆';
+    margin-right: 0.35rem;
+    font-size: 0.5rem;
+    color: var(--tooltip-accent);
+    vertical-align: middle;
   }
+}
 
-  &--italic {
-    font-style: italic;
-  }
+.game-tooltip__passive {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.45rem;
+  align-items: baseline;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgb(255 255 255 / 5%);
 
-  &--enchant {
-    color: #d4d4d4;
-    font-style: normal;
+  &:last-child {
+    border-bottom: none;
   }
+}
 
-  &--stat {
-    color: #6b8cff;
-    font-style: normal;
-    font-variant-numeric: tabular-nums;
-  }
+.game-tooltip__passive-gear {
+  font-family: var(--font);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tooltip-accent) 70%, #d8c4ff);
+}
 
-  &--passive {
-    color: #c4a8ff;
-    font-style: italic;
-  }
+.game-tooltip__passive-text {
+  font-family: var(--font);
+  font-size: 0.8125rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: #d8cce8;
 }
 
 .sprite-extrusion-view {

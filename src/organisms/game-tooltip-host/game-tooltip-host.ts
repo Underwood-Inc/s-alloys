@@ -1,13 +1,10 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
 import { renderTooltipBottomBar, renderTooltipTopBar } from '../../molecules/tooltip-frame/tooltipChrome.js';
+import { renderGameTooltipBody, renderGameTooltipMeta } from '../../molecules/tooltip-model/renderGameTooltipBody.js';
 import { rarityStyle } from '../../molecules/tooltip-model/rarityCatalog.js';
 import type { GameTooltipData, TooltipShowDetail } from '../../molecules/tooltip-model/types.js';
 import { TOOLTIP_HIDE_EVENT, TOOLTIP_SHOW_EVENT } from '../../molecules/tooltip-model/types.js';
 import '../item-preview/item-preview.js';
-
-function lineClass(kind: string): string {
-  return `game-tooltip__line game-tooltip__line--${kind}`;
-}
 
 /**
  * Global tooltip host — rarity-styled CSS chrome (top bar + body + bottom bar).
@@ -110,17 +107,14 @@ export class GameTooltipHost extends HTMLElement {
         <div class="game-tooltip__body">
           <div class="game-tooltip__header">
             <item-preview class="game-tooltip__preview" ${previewAttrs}></item-preview>
-            <p class="game-tooltip__title">${escapeHtml(tooltip.title)}</p>
+            <div class="game-tooltip__headline">
+              <p class="game-tooltip__title">${escapeHtml(tooltip.title)}</p>
+              ${renderGameTooltipMeta(tooltip.lines, rarity)}
+            </div>
           </div>
           <div class="game-tooltip__divider" aria-hidden="true"></div>
           <div class="game-tooltip__scroll" tabindex="0">
-            <ul class="game-tooltip__lines">
-              ${tooltip.lines.map((line) => `
-                <li class="${lineClass(line.kind)}${line.italic ? ' game-tooltip__line--italic' : ''}">
-                  ${escapeHtml(line.text)}
-                </li>
-              `).join('')}
-            </ul>
+            ${renderGameTooltipBody(tooltip.lines)}
           </div>
         </div>
         ${renderTooltipBottomBar()}
