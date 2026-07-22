@@ -73,18 +73,18 @@ node tools/_export-public-s-alloys.mjs
 
 That updates **`public/data/cases.json` only**, then runs `npm run build`. Icons and guide art are never touched by export.
 
-## Deploy
+## Publish to GitHub Pages
 
 **`master`** — source only (TypeScript, `public/`, tests).  
-**`gh-pages`** — built `dist/` only (what GitHub Pages serves). Never edit `gh-pages` by hand.
+**`gh-pages`** — built `dist/` only (what GitHub Pages serves).
 
-GitHub Pages: **Deploy from branch** → branch **`gh-pages`** → folder **`/`** (root).
+GitHub Pages is configured as **Deploy from branch** → **`gh-pages`** → **`/`** (root).
 
-On every push to `master`, the **Deploy site** workflow runs `npm test`, `npm run build`, and force-pushes `dist/` to `gh-pages`. You can also re-run it manually under Actions → Deploy site.
-
-If Actions fail with a **billing issue**, build locally and publish until billing is fixed:
+There is no CI deploy workflow. Build locally, test, then push `dist/` to `gh-pages`:
 
 ```powershell
+cd s-alloys
+npm test
 npm run build
 cd dist
 git init
@@ -93,3 +93,5 @@ git add -A
 git commit -m "deploy: local build"
 git push -f git@github.com:Underwood-Inc/s-alloys.git HEAD:gh-pages
 ```
+
+Push source changes to `master` separately when you are ready (`git push origin master`).
