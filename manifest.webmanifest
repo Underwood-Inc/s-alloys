@@ -1,0 +1,32 @@
+{
+  "name": "Alloys QA",
+  "short_name": "Alloys QA",
+  "description": "Interactive Alloys crafting test plan with CSV import/export for ad-hoc QA sessions.",
+  "start_url": "./qa/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f1419",
+  "theme_color": "#0ea5e9",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "./icons/icon-64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

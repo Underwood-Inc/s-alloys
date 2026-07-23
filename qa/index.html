@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0ea5e9" />
+    <meta name="description" content="Interactive Alloys crafting QA checklist with CSV import/export." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Alloys QA" />
+    <title>Alloys QA — Crafting test plan</title>
+    <link rel="icon" href="../icons/icon-64.png" type="image/png" sizes="64x64" />
+    <link rel="apple-touch-icon" href="../icons/icon-192.png" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="offline-banner" id="offline-banner">Offline — progress is saved locally; re-export when back online to share.</div>
+    <header>
+      <h1>Alloys QA</h1>
+      <span class="meta" id="version-meta">Loading…</span>
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="Search cases…" aria-label="Search cases" />
+        <select id="filter-suite" aria-label="Filter by suite">
+          <option value="">All suites</option>
+        </select>
+        <select id="filter-alloy" aria-label="Filter by alloy">
+          <option value="">All alloys</option>
+        </select>
+        <select id="filter-verdict" aria-label="Filter by verdict">
+          <option value="">Any verdict</option>
+          <option value="untested">Untested</option>
+          <option value="pass">Pass</option>
+          <option value="fail">Fail</option>
+          <option value="skip">Skip</option>
+        </select>
+        <div class="menu" id="file-menu">
+          <button type="button" id="file-menu-btn" aria-haspopup="true" aria-expanded="false">File ▾</button>
+          <div class="menu-panel" role="menu">
+            <button type="button" data-action="export-csv" role="menuitem">Export progress (CSV)…</button>
+            <button type="button" data-action="export-json" role="menuitem">Export progress (JSON)…</button>
+            <hr />
+            <button type="button" data-action="import-csv" role="menuitem">Import progress (CSV)…</button>
+            <button type="button" data-action="import-json" role="menuitem">Import progress (JSON)…</button>
+            <hr />
+            <button type="button" data-action="tester-name" role="menuitem">Set tester name…</button>
+            <button type="button" data-action="reset" role="menuitem">Reset all progress…</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="progress-wrap">
+          <div class="meta" id="progress-label">0 / 0 reviewed</div>
+          <div class="progress-bar" aria-hidden="true"><span id="progress-fill"></span></div>
+        </div>
+        <label for="tester-display">Tester</label>
+        <div id="tester-display" class="meta">—</div>
+        <label>Cases</label>
+        <ul class="case-list" id="case-list"></ul>
+      </aside>
+      <main id="case-detail">
+        <p class="empty">Select a case from the list.</p>
+      </main>
+    </div>
+
+    <input type="file" id="file-input" accept=".csv,.json,text/csv,application/json" />
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

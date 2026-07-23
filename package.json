@@ -1,0 +1,10 @@
+{
+  "name": "s-alloys",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:cases": "node scripts/build-cases.mjs",
+    "build:icons": "node scripts/generate-icons.mjs",
+    "build": "npm run build:icons && npm run build:cases"
+  }
+}
