@@ -1,5 +1,8 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
+import { highlightSearchText } from '../../atoms/highlightSearchText.js';
+import { readAssetImageSrc } from '../../atoms/asset-image/renderAssetImage.js';
 import { hideGameTooltip, showGameTooltip } from '../../atoms/tooltip/dispatchTooltip.js';
+import { getActiveRecipeSearchQuery } from '../../molecules/recipe-search/activeRecipeSearchQuery.js';
 import { buildVanillaIngredientTooltip } from '../../molecules/tooltip-model/buildGameTooltip.js';
 import type { IngredientId } from '../../molecules/recipe-catalog/ingredients.js';
 import { renderTooltipBottomBar, renderTooltipTopBar } from '../../molecules/tooltip-frame/tooltipChrome.js';
@@ -7,14 +10,20 @@ import { renderGameTooltipBody, renderGameTooltipMeta } from '../../molecules/to
 import { rarityStyle } from '../../molecules/tooltip-model/rarityCatalog.js';
 import type { GameTooltipData, TooltipShowDetail } from '../../molecules/tooltip-model/types.js';
 import { TOOLTIP_HIDE_EVENT, TOOLTIP_SHOW_EVENT } from '../../molecules/tooltip-model/types.js';
-import { applyViewportTooltipAnchor } from '../../molecules/viewport-tooltip/applyViewportTooltipAnchor.js';
 import {
+  subscribeTooltipLayerForceClosed,
+  subscribeTooltipLayerChildClosed,
   canCloseTooltipLayer,
   closeTooltipLayer,
   forceCloseTooltipLayer,
   openTooltipLayer,
-  subscribeTooltipLayerChildClosed,
 } from '../../molecules/tooltip-stack/tooltipLayerStack.js';
+import { applyViewportTooltipAnchor } from '../../molecules/viewport-tooltip/applyViewportTooltipAnchor.js';
+import { TOOLTIP_HOVER_MAX_MS } from '../../molecules/viewport-tooltip/viewportTooltipConstants.js';
+import {
+  isPointerOverElement,
+  shouldDismissHoveredTooltip,
+} from '../../molecules/viewport-tooltip/tooltipPointerDismiss.js';
 import '../item-preview/item-preview.js';
 
 /**
@@ -27,9 +36,13 @@ export class GameTooltipHost extends HTMLElement {
   private activeChildLayerId: number | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
   private childHideTimer: ReturnType<typeof setTimeout> | null = null;
+  private hoverMaxTimer: ReturnType<typeof setTimeout> | null = null;
+  private childHoverMaxTimer: ReturnType<typeof setTimeout> | null = null;
   private pointerOnPanel = false;
   private pointerOnChildPanel = false;
   private unsubscribeChildClosed: (() => void) | null = null;
+  private unsubscribeForceClosed: (() => void) | null = null;
+  private readonly onScroll = (event: Event) => this.handleScroll(event);
 
   connectedCallback() {
     this.className = 'game-tooltip-host';
@@ -39,6 +52,7 @@ export class GameTooltipHost extends HTMLElement {
     `;
     document.addEventListener(TOOLTIP_SHOW_EVENT, this.onShow as EventListener);
     document.addEventListener(TOOLTIP_HIDE_EVENT, this.onHide as EventListener);
+    window.addEventListener('scroll', this.onScroll, true);
     this.unsubscribeChildClosed = subscribeTooltipLayerChildClosed((parentId) => {
       if (parentId === this.activeChildLayerId) {
         this.scheduleChildHide();
@@ -47,15 +61,24 @@ export class GameTooltipHost extends HTMLElement {
       if (parentId !== this.activeLayerId) return;
       this.scheduleHide();
     });
+    this.unsubscribeForceClosed = subscribeTooltipLayerForceClosed((layerId) => {
+      if (layerId === this.activeChildLayerId) this.detachChild();
+      if (layerId === this.activeLayerId) this.detachRoot();
+    });
   }
 
   disconnectedCallback() {
     document.removeEventListener(TOOLTIP_SHOW_EVENT, this.onShow as EventListener);
     document.removeEventListener(TOOLTIP_HIDE_EVENT, this.onHide as EventListener);
+    window.removeEventListener('scroll', this.onScroll, true);
     this.unsubscribeChildClosed?.();
     this.unsubscribeChildClosed = null;
+    this.unsubscribeForceClosed?.();
+    this.unsubscribeForceClosed = null;
     this.clearHideTimer();
     this.clearChildHideTimer();
+    this.clearHoverMaxTimer();
+    this.clearChildHoverMaxTimer();
     if (this.activeChildLayerId !== null) {
       forceCloseTooltipLayer(this.activeChildLayerId);
       this.activeChildLayerId = null;
@@ -73,13 +96,13 @@ export class GameTooltipHost extends HTMLElement {
     const panel = this.panel();
     if (panel && !panel.hidden && panel.contains(detail.anchor)) {
       this.activeChildAnchor = detail.anchor;
-      this.paint(detail.tooltip, detail.anchor, this.childPanel(), 'child');
+      this.paint(detail.tooltip, detail.anchor, this.childPanel(), 'child', detail.trigger === 'hover');
       return;
     }
 
     this.hideChild();
     this.activeAnchor = detail.anchor;
-    this.paint(detail.tooltip, detail.anchor, panel, 'root');
+    this.paint(detail.tooltip, detail.anchor, panel, 'root', detail.trigger === 'hover');
   };
 
   private onHide = (event: Event) => {
@@ -92,11 +115,37 @@ export class GameTooltipHost extends HTMLElement {
     this.scheduleHide();
   };
 
+  private handleScroll(event?: Event) {
+    const panel = this.panel();
+    const childPanel = this.childPanel();
+    const target = event?.target;
+    if (target instanceof Node && (panel?.contains(target) || childPanel?.contains(target))) {
+      return;
+    }
+
+    if (
+      this.activeChildAnchor
+      && shouldDismissHoveredTooltip(this.activeChildAnchor, [childPanel])
+    ) {
+      this.hideChild();
+    }
+
+    if (
+      this.activeAnchor
+      && shouldDismissHoveredTooltip(this.activeAnchor, [panel, childPanel])
+    ) {
+      this.hide();
+    }
+  }
+
   private scheduleHide() {
     if (this.activeLayerId !== null && !canCloseTooltipLayer(this.activeLayerId)) return;
     this.clearHideTimer();
     this.hideTimer = setTimeout(() => {
-      if (!this.pointerOnPanel && !this.pointerOnChildPanel) this.hide();
+      if (this.pointerOnPanel || this.pointerOnChildPanel) return;
+      if (isPointerOverElement(this.activeAnchor)) return;
+      if (isPointerOverElement(this.activeChildAnchor)) return;
+      this.hide();
     }, 150);
   }
 
@@ -104,7 +153,9 @@ export class GameTooltipHost extends HTMLElement {
     if (this.activeChildLayerId !== null && !canCloseTooltipLayer(this.activeChildLayerId)) return;
     this.clearChildHideTimer();
     this.childHideTimer = setTimeout(() => {
-      if (!this.pointerOnChildPanel) this.hideChild();
+      if (this.pointerOnChildPanel) return;
+      if (isPointerOverElement(this.activeChildAnchor)) return;
+      this.hideChild();
     }, 150);
   }
 
@@ -120,6 +171,41 @@ export class GameTooltipHost extends HTMLElement {
       clearTimeout(this.childHideTimer);
       this.childHideTimer = null;
     }
+  }
+
+  private clearHoverMaxTimer() {
+    if (this.hoverMaxTimer) {
+      clearTimeout(this.hoverMaxTimer);
+      this.hoverMaxTimer = null;
+    }
+  }
+
+  private clearChildHoverMaxTimer() {
+    if (this.childHoverMaxTimer) {
+      clearTimeout(this.childHoverMaxTimer);
+      this.childHoverMaxTimer = null;
+    }
+  }
+
+  private scheduleHoverMax(mode: 'root' | 'child') {
+    const clear = mode === 'root' ? () => this.clearHoverMaxTimer() : () => this.clearChildHoverMaxTimer();
+    const set = (timer: ReturnType<typeof setTimeout>) => {
+      if (mode === 'root') this.hoverMaxTimer = timer;
+      else this.childHoverMaxTimer = timer;
+    };
+
+    clear();
+    set(setTimeout(() => {
+      if (mode === 'root') {
+        if (this.pointerOnPanel || this.pointerOnChildPanel) return;
+        if (isPointerOverElement(this.activeAnchor)) return;
+        this.hide();
+      } else if (this.pointerOnChildPanel || isPointerOverElement(this.activeChildAnchor)) {
+        return;
+      } else {
+        this.hideChild();
+      }
+    }, TOOLTIP_HOVER_MAX_MS));
   }
 
   private bindPanelPointer(panel: HTMLElement, mode: 'root' | 'child') {
@@ -150,14 +236,15 @@ export class GameTooltipHost extends HTMLElement {
       if (!id) return;
 
       const label = chip.querySelector('.game-tooltip__ore-label')?.textContent?.trim() ?? id;
-      const icon = chip.querySelector<HTMLImageElement>('.game-tooltip__ore-icon')?.src ?? '';
+      const icon = readAssetImageSrc(chip.querySelector('.game-tooltip__ore-icon'));
       const tooltip = buildVanillaIngredientTooltip(id, label, icon);
 
-      const open = () => showGameTooltip(chip, tooltip);
+      const openHover = () => showGameTooltip(chip, tooltip, 'hover');
+      const openFocus = () => showGameTooltip(chip, tooltip, 'focus');
       const close = () => hideGameTooltip(chip);
 
-      chip.addEventListener('mouseenter', open);
-      chip.addEventListener('focus', open);
+      chip.addEventListener('mouseenter', openHover);
+      chip.addEventListener('focus', openFocus);
       chip.addEventListener('mouseleave', close);
       chip.addEventListener('blur', close);
     });
@@ -171,35 +258,42 @@ export class GameTooltipHost extends HTMLElement {
     return this.querySelector('.game-tooltip-host__panel--child');
   }
 
-  private hideChild() {
-    if (this.activeChildLayerId !== null && !canCloseTooltipLayer(this.activeChildLayerId)) return;
-
+  private detachChild() {
     this.clearChildHideTimer();
+    this.clearChildHoverMaxTimer();
     const panel = this.childPanel();
     if (panel) panel.hidden = true;
     this.activeChildAnchor = null;
+    this.activeChildLayerId = null;
     this.pointerOnChildPanel = false;
+  }
 
-    if (this.activeChildLayerId !== null) {
-      closeTooltipLayer(this.activeChildLayerId);
-      this.activeChildLayerId = null;
-    }
+  private detachRoot() {
+    this.detachChild();
+    this.clearHideTimer();
+    this.clearHoverMaxTimer();
+    const panel = this.panel();
+    if (panel) panel.hidden = true;
+    this.activeAnchor = null;
+    this.activeLayerId = null;
+    this.pointerOnPanel = false;
+  }
+
+  private hideChild() {
+    if (this.activeChildLayerId !== null && !canCloseTooltipLayer(this.activeChildLayerId)) return;
+
+    const layerId = this.activeChildLayerId;
+    this.detachChild();
+    if (layerId !== null) closeTooltipLayer(layerId);
   }
 
   private hide() {
     this.hideChild();
     if (this.activeLayerId !== null && !canCloseTooltipLayer(this.activeLayerId)) return;
 
-    this.clearHideTimer();
-    const panel = this.panel();
-    if (panel) panel.hidden = true;
-    this.activeAnchor = null;
-    this.pointerOnPanel = false;
-
-    if (this.activeLayerId !== null) {
-      closeTooltipLayer(this.activeLayerId);
-      this.activeLayerId = null;
-    }
+    const layerId = this.activeLayerId;
+    this.detachRoot();
+    if (layerId !== null) closeTooltipLayer(layerId);
   }
 
   private paint(
@@ -207,19 +301,23 @@ export class GameTooltipHost extends HTMLElement {
     anchor: HTMLElement,
     panel: HTMLElement | null,
     mode: 'root' | 'child',
+    hoverOpened: boolean,
   ) {
     if (!panel) return;
 
     if (mode === 'root') {
       this.clearHideTimer();
+      this.clearHoverMaxTimer();
       this.pointerOnPanel = false;
     } else {
       this.clearChildHideTimer();
+      this.clearChildHoverMaxTimer();
       this.pointerOnChildPanel = false;
     }
 
     const style = rarityStyle(tooltip.rarity);
     const rarity = tooltip.rarity;
+    const highlightQuery = getActiveRecipeSearchQuery();
 
     panel.hidden = false;
     panel.dataset.rarity = rarity;
@@ -242,13 +340,13 @@ export class GameTooltipHost extends HTMLElement {
           <div class="game-tooltip__header">
             <item-preview class="game-tooltip__preview" ${previewAttrs}></item-preview>
             <div class="game-tooltip__headline">
-              <p class="game-tooltip__title">${escapeHtml(tooltip.title)}</p>
-              ${renderGameTooltipMeta(tooltip.lines, rarity)}
+              <p class="game-tooltip__title">${highlightQuery ? highlightSearchText(tooltip.title, highlightQuery) : escapeHtml(tooltip.title)}</p>
+              ${renderGameTooltipMeta(tooltip.lines, rarity, highlightQuery)}
             </div>
           </div>
           <div class="game-tooltip__divider" aria-hidden="true"></div>
           <div class="game-tooltip__scroll" tabindex="0">
-            ${renderGameTooltipBody(tooltip.lines, tooltip.oreSources)}
+            ${renderGameTooltipBody(tooltip.lines, tooltip.oreSources, highlightQuery)}
           </div>
         </div>
         ${renderTooltipBottomBar()}
@@ -265,6 +363,7 @@ export class GameTooltipHost extends HTMLElement {
         anchor,
         surface: panel,
       });
+      if (hoverOpened) this.scheduleHoverMax('root');
     } else {
       if (this.activeChildLayerId !== null) closeTooltipLayer(this.activeChildLayerId);
       this.activeChildLayerId = openTooltipLayer({
@@ -272,10 +371,11 @@ export class GameTooltipHost extends HTMLElement {
         anchor,
         surface: panel,
       });
+      if (hoverOpened) this.scheduleHoverMax('child');
     }
 
     requestAnimationFrame(() => {
-      applyViewportTooltipAnchor(anchor, panel, { preferred: ['top', 'bottom', 'right', 'left'] });
+      applyViewportTooltipAnchor(anchor, panel, { preferred: ['bottom', 'top', 'right', 'left'] });
     });
   }
 }

@@ -38,14 +38,20 @@ export class AlloysSiteHeader extends HTMLElement {
         <nav>
           <a class="nav-link" data-view="home" href="${base}">Home</a>
           <a class="nav-link" data-view="guide" href="${base}guide">Guide</a>
-          <a class="nav-link" data-view="checklist" href="${base}checklist">Checklist</a>
+          <a class="nav-link" data-view="checklist" href="${base}checklist">Test checklist</a>
+          <a
+            class="nav-link nav-link--external"
+            href="https://short.army/alloys"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Download</a>
         </nav>
       </div>
     `;
     this.updateActiveNav();
     window.addEventListener('popstate', () => this.updateActiveNav());
 
-    this.querySelectorAll<HTMLAnchorElement>('.nav-link').forEach((link) => {
+    this.querySelectorAll<HTMLAnchorElement>('.nav-link[data-view]').forEach((link) => {
       link.addEventListener('click', (event) => {
         event.preventDefault();
         const view = link.dataset.view;

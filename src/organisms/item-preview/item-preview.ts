@@ -85,7 +85,7 @@ export class ItemPreview extends HTMLElement {
     const kind = parseSpriteExtrusionKind(this.getAttribute('extrusion-kind') ?? undefined);
     const entry = getItemModel(modelId);
 
-    this.className = 'item-preview';
+    this.classList.add('item-preview');
 
     if (entry?.kind === 'gltf' && entry.src) {
       this.innerHTML = `

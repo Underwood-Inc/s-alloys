@@ -1,7 +1,13 @@
 import { escapeHtml } from '../../atoms/dom/defineElement.js';
+import { highlightSearchText } from '../../atoms/highlightSearchText.js';
+import { renderAssetImage } from '../../atoms/asset-image/renderAssetImage.js';
 import type { TooltipOreSource, TooltipRarity } from './types.js';
 import { layoutTooltipLines, type TooltipLineLayout } from './layoutTooltipLines.js';
 import type { TooltipLine } from './types.js';
+
+function textHtml(text: string, highlightQuery?: string): string {
+  return highlightQuery ? highlightSearchText(text, highlightQuery) : escapeHtml(text);
+}
 
 function formatStatKey(key: string): string {
   const labels: Record<string, string> = {
@@ -24,7 +30,11 @@ function rarityLabel(rarity: TooltipRarity): string {
 }
 
 /** Rarity + tier on row two; enchantability on row three — under the item title. */
-export function renderGameTooltipMeta(lines: TooltipLine[], rarity: TooltipRarity): string {
+export function renderGameTooltipMeta(
+  lines: TooltipLine[],
+  rarity: TooltipRarity,
+  highlightQuery = '',
+): string {
   const layout = layoutTooltipLines(lines);
 
   const tierChips = [
@@ -38,7 +48,7 @@ export function renderGameTooltipMeta(lines: TooltipLine[], rarity: TooltipRarit
   const enchant = layout.stats.find((stat) => stat.key === 'Enchantability');
   if (enchant) {
     detailChips.push(
-      `<span class="game-tooltip__meta-chip game-tooltip__meta-chip--enchant"><span class="game-tooltip__meta-chip-label">Enchantability</span><strong class="game-tooltip__meta-chip-value">${escapeHtml(enchant.value)}</strong></span>`,
+      `<span class="game-tooltip__meta-chip game-tooltip__meta-chip--enchant"><span class="game-tooltip__meta-chip-label">Enchantability</span><strong class="game-tooltip__meta-chip-value">${textHtml(enchant.value, highlightQuery)}</strong></span>`,
     );
   }
 
@@ -50,35 +60,35 @@ export function renderGameTooltipMeta(lines: TooltipLine[], rarity: TooltipRarit
   `;
 }
 
-function renderDescriptions(layout: TooltipLineLayout): string {
+function renderDescriptions(layout: TooltipLineLayout, highlightQuery = ''): string {
   if (!layout.descriptions.length) return '';
   const label = layout.descriptions[0]?.toLowerCase().includes('ingot') ? 'Recipe' : 'Details';
   return `
     <section class="game-tooltip__section game-tooltip__section--desc">
       <h3 class="game-tooltip__section-label">${label}</h3>
       ${layout.descriptions.map((text) => `
-        <p class="game-tooltip__desc">${escapeHtml(text)}</p>
+        <p class="game-tooltip__desc">${textHtml(text, highlightQuery)}</p>
       `).join('')}
     </section>
   `;
 }
 
-function renderPrimaryStats(stats: TooltipLineLayout['stats']): string {
+function renderPrimaryStats(stats: TooltipLineLayout['stats'], highlightQuery = ''): string {
   if (!stats.length) return '';
 
   return `
     <dl class="game-tooltip__stat-grid">
       ${stats.map((stat) => `
         <div class="game-tooltip__stat">
-          <dt>${escapeHtml(formatStatKey(stat.key))}</dt>
-          <dd>${escapeHtml(stat.value || '—')}</dd>
+          <dt>${textHtml(formatStatKey(stat.key), highlightQuery)}</dt>
+          <dd>${textHtml(stat.value || '—', highlightQuery)}</dd>
         </div>
       `).join('')}
     </dl>
   `;
 }
 
-function renderStatGrid(layout: TooltipLineLayout): string {
+function renderStatGrid(layout: TooltipLineLayout, highlightQuery = ''): string {
   const primary = layout.stats.filter((stat) => stat.key !== 'Enchantability');
   if (!primary.length) return '';
 
@@ -99,7 +109,7 @@ function renderStatGrid(layout: TooltipLineLayout): string {
     sections.push(`
       <section class="game-tooltip__section game-tooltip__section--drop">
         <h3 class="game-tooltip__section-label">Drop rate</h3>
-        <p class="game-tooltip__desc">${escapeHtml(dropRate.value)}</p>
+        <p class="game-tooltip__desc">${textHtml(dropRate.value, highlightQuery)}</p>
       </section>
     `);
   }
@@ -108,7 +118,7 @@ function renderStatGrid(layout: TooltipLineLayout): string {
     sections.push(`
       <section class="game-tooltip__section game-tooltip__section--stats">
         <h3 class="game-tooltip__section-label">Stats</h3>
-        ${renderPrimaryStats(other)}
+        ${renderPrimaryStats(other, highlightQuery)}
       </section>
     `);
   }
@@ -117,7 +127,7 @@ function renderStatGrid(layout: TooltipLineLayout): string {
     sections.push(`
       <section class="game-tooltip__section game-tooltip__section--acquisition">
         <h3 class="game-tooltip__section-label">Acquisition</h3>
-        ${renderPrimaryStats(acquisition)}
+        ${renderPrimaryStats(acquisition, highlightQuery)}
       </section>
     `);
   }
@@ -126,7 +136,7 @@ function renderStatGrid(layout: TooltipLineLayout): string {
     sections.push(`
       <section class="game-tooltip__section game-tooltip__section--mining">
         <h3 class="game-tooltip__section-label">Mining</h3>
-        ${renderPrimaryStats(mining)}
+        ${renderPrimaryStats(mining, highlightQuery)}
       </section>
     `);
   }
@@ -134,7 +144,7 @@ function renderStatGrid(layout: TooltipLineLayout): string {
   return sections.join('');
 }
 
-export function renderGameTooltipOreSources(sources: TooltipOreSource[]): string {
+export function renderGameTooltipOreSources(sources: TooltipOreSource[], highlightQuery = ''): string {
   if (!sources.length) return '';
 
   return `
@@ -150,8 +160,15 @@ export function renderGameTooltipOreSources(sources: TooltipOreSource[]): string
               data-ore-id="${escapeHtml(source.ingredientId)}"
               aria-label="${escapeHtml(source.label)} mining levels"
             >
-              <img class="game-tooltip__ore-icon" src="${escapeHtml(source.icon)}" alt="" loading="lazy" decoding="async" />
-              <span class="game-tooltip__ore-label">${escapeHtml(source.label)}</span>
+              ${renderAssetImage({
+                src: source.icon,
+                alt: '',
+                loading: 'lazy',
+                decoding: 'async',
+                class: 'game-tooltip__ore-icon',
+                fit: 'contain',
+              })}
+              <span class="game-tooltip__ore-label">${textHtml(source.label, highlightQuery)}</span>
             </button>
           </li>
         `).join('')}
@@ -160,35 +177,39 @@ export function renderGameTooltipOreSources(sources: TooltipOreSource[]): string
   `;
 }
 
-export function renderGameTooltipBody(lines: TooltipLine[], oreSources?: TooltipOreSource[]): string {
+export function renderGameTooltipBody(
+  lines: TooltipLine[],
+  oreSources?: TooltipOreSource[],
+  highlightQuery = '',
+): string {
   const layout = layoutTooltipLines(lines);
 
   return `
     <div class="game-tooltip__content">
-      ${renderDescriptions(layout)}
-      ${renderStatGrid(layout)}
-      ${renderEnchants(layout)}
-      ${renderPassives(layout)}
-      ${oreSources?.length ? renderGameTooltipOreSources(oreSources) : ''}
+      ${renderDescriptions(layout, highlightQuery)}
+      ${renderStatGrid(layout, highlightQuery)}
+      ${renderEnchants(layout, highlightQuery)}
+      ${renderPassives(layout, highlightQuery)}
+      ${oreSources?.length ? renderGameTooltipOreSources(oreSources, highlightQuery) : ''}
     </div>
   `;
 }
 
-function renderEnchants(layout: TooltipLineLayout): string {
+function renderEnchants(layout: TooltipLineLayout, highlightQuery = ''): string {
   if (!layout.enchants.length) return '';
   return `
     <section class="game-tooltip__section game-tooltip__section--enchants">
       <h3 class="game-tooltip__section-label">Intrinsic</h3>
       <ul class="game-tooltip__enchant-list">
         ${layout.enchants.map((text) => `
-          <li class="game-tooltip__enchant">${escapeHtml(text)}</li>
+          <li class="game-tooltip__enchant">${textHtml(text, highlightQuery)}</li>
         `).join('')}
       </ul>
     </section>
   `;
 }
 
-function renderPassives(layout: TooltipLineLayout): string {
+function renderPassives(layout: TooltipLineLayout, highlightQuery = ''): string {
   if (!layout.passives.length) return '';
   return `
     <section class="game-tooltip__section game-tooltip__section--passives">
@@ -196,8 +217,8 @@ function renderPassives(layout: TooltipLineLayout): string {
       <ul class="game-tooltip__passive-list">
         ${layout.passives.map((passive) => `
           <li class="game-tooltip__passive">
-            ${passive.gear ? `<span class="game-tooltip__passive-gear">${escapeHtml(passive.gear)}</span>` : ''}
-            <span class="game-tooltip__passive-text">${escapeHtml(passive.text)}</span>
+            ${passive.gear ? `<span class="game-tooltip__passive-gear">${textHtml(passive.gear, highlightQuery)}</span>` : ''}
+            <span class="game-tooltip__passive-text">${textHtml(passive.text, highlightQuery)}</span>
           </li>
         `).join('')}
       </ul>

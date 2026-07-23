@@ -4,13 +4,15 @@ import {
 } from './applyViewportTooltipAnchor.js';
 import { portalViewportPanel } from './portalViewportPanel.js';
 import type { ViewportTooltipOptions } from './viewportTooltipPosition.js';
-import { VIEWPORT_TOOLTIP_HIDE_DELAY_MS } from './viewportTooltipConstants.js';
+import { VIEWPORT_TOOLTIP_HIDE_DELAY_MS, TOOLTIP_HOVER_MAX_MS } from './viewportTooltipConstants.js';
+import { isPointerOverElement, shouldDismissHoveredTooltip } from './tooltipPointerDismiss.js';
 import {
   canCloseTooltipLayer,
   closeTooltipLayer,
   forceCloseTooltipLayer,
   openTooltipLayer,
   subscribeTooltipLayerChildClosed,
+  subscribeTooltipLayerForceClosed,
 } from '../tooltip-stack/tooltipLayerStack.js';
 
 export interface SharedViewportPanelBinding {
@@ -42,6 +44,7 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
   let activeTrigger: HTMLElement | null = null;
   let activeLayerId: number | null = null;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
+  let hoverMaxTimer: ReturnType<typeof setTimeout> | null = null;
 
   const cancelHide = () => {
     if (!hideTimer) return;
@@ -49,10 +52,17 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
     hideTimer = null;
   };
 
+  const clearHoverMax = () => {
+    if (!hoverMaxTimer) return;
+    clearTimeout(hoverMaxTimer);
+    hoverMaxTimer = null;
+  };
+
   const hide = () => {
     if (activeLayerId !== null && !canCloseTooltipLayer(activeLayerId)) return;
 
     cancelHide();
+    clearHoverMax();
     panel.hidden = true;
     panel.classList.remove('is-open');
     clearViewportTooltipAnchor(panel);
@@ -71,6 +81,7 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
     cancelHide();
     hideTimer = setTimeout(() => {
       hideTimer = null;
+      if (isPointerOverElement(activeTrigger) || isPointerOverElement(panel)) return;
       hide();
     }, hideDelayMs);
   };
@@ -80,8 +91,9 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
     applyViewportTooltipAnchor(activeTrigger, panel, anchorOptions);
   };
 
-  const show = (trigger: HTMLElement) => {
+  const show = (trigger: HTMLElement, viaHover = false) => {
     cancelHide();
+    clearHoverMax();
     if (activeTrigger && activeTrigger !== trigger) {
       activeTrigger.classList.remove('is-active');
       activeTrigger.setAttribute('aria-expanded', 'false');
@@ -105,12 +117,39 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
     requestAnimationFrame(() => {
       applyViewportTooltipAnchor(trigger, panel, anchorOptions);
     });
+
+    if (viaHover) {
+      hoverMaxTimer = setTimeout(() => {
+        if (isPointerOverElement(trigger) || isPointerOverElement(panel)) return;
+        hide();
+      }, TOOLTIP_HOVER_MAX_MS);
+    }
+  };
+
+  const handleScroll = () => {
+    if (!activeTrigger || panel.hidden) return;
+    if (shouldDismissHoveredTooltip(activeTrigger, [panel])) hide();
+    else reposition();
   };
 
   const unsubscribeChildClosed = subscribeTooltipLayerChildClosed((parentId) => {
     if (activeLayerId !== parentId) return;
     if (panel.matches(':hover') || activeTrigger?.matches(':hover')) return;
+    if (isPointerOverElement(activeTrigger) || isPointerOverElement(panel)) return;
     scheduleHide();
+  });
+
+  const unsubscribeForceClosed = subscribeTooltipLayerForceClosed((layerId) => {
+    if (activeLayerId !== layerId) return;
+    cancelHide();
+    clearHoverMax();
+    panel.hidden = true;
+    panel.classList.remove('is-open');
+    clearViewportTooltipAnchor(panel);
+    activeTrigger?.classList.remove('is-active');
+    activeTrigger?.setAttribute('aria-expanded', 'false');
+    activeTrigger = null;
+    activeLayerId = null;
   });
 
   const cleanups: Array<() => void> = [];
@@ -118,13 +157,13 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
   for (const trigger of triggers) {
     const onMouseEnter = () => {
       if (!canHover) return;
-      show(trigger);
+      show(trigger, true);
     };
     const onMouseLeave = () => {
       if (!canHover) return;
       scheduleHide();
     };
-    const onFocus = () => show(trigger);
+    const onFocus = () => show(trigger, false);
     const onBlur = (event: FocusEvent) => {
       if (containsTarget(trigger, panel, event.relatedTarget)) return;
       scheduleHide();
@@ -152,7 +191,7 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
     panel.removeEventListener('mouseleave', onPanelLeave);
   });
 
-  const onViewportChange = () => reposition();
+  const onViewportChange = () => handleScroll();
   window.addEventListener('resize', onViewportChange);
   window.addEventListener('scroll', onViewportChange, true);
   cleanups.push(() => {
@@ -162,8 +201,10 @@ export function bindSharedViewportPanel(binding: SharedViewportPanelBinding): ()
 
   return () => {
     cancelHide();
+    clearHoverMax();
     cleanups.forEach((cleanup) => cleanup());
     unsubscribeChildClosed();
+    unsubscribeForceClosed();
     if (activeLayerId !== null) forceCloseTooltipLayer(activeLayerId);
     activeLayerId = null;
     activeTrigger = null;

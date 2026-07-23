@@ -1,3 +1,5 @@
+import { assetUrl } from '../../lib/assetUrl.js';
+
 export const ICON_BASE = `${import.meta.env.BASE_URL}icons/`;
 
 export const HERO_ALLOY_FRAMES = [
@@ -19,15 +21,15 @@ export type SiteIconSize = 'nav' | 'md' | 'lg' | 'hero';
 export type StaticIconPixels = 64 | 192 | 512;
 
 export function heroFrameUrl(alloy: HeroAlloyId): string {
-  return `${ICON_BASE}frames/${alloy}.png`;
+  return assetUrl(`icons/frames/${alloy}.png`);
 }
 
 export function staticIconUrl(pixels: StaticIconPixels = 64): string {
-  return `${ICON_BASE}icon-${pixels}.png`;
+  return assetUrl(`icons/icon-${pixels}.png`);
 }
 
 export function iconCycleGifUrl(): string {
-  return `${ICON_BASE}icon-cycle.gif`;
+  return assetUrl('icons/icon-cycle.gif');
 }
 
 export function displayPixelsForSize(size: SiteIconSize): number {

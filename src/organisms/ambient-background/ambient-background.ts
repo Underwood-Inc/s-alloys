@@ -10,6 +10,8 @@ import {
 export class AlloysAmbientBackground extends HTMLElement {
   private starfield!: AmbientStarfield;
   private initialized = false;
+  private syncViewportSize?: () => void;
+  private mobileViewportQuery = window.matchMedia('(max-width: 768px)');
 
   connectedCallback() {
     if (this.initialized) return;
@@ -18,11 +20,42 @@ export class AlloysAmbientBackground extends HTMLElement {
     this.setAttribute('aria-hidden', 'true');
     this.className = 'ambient';
     this.starfield = createAmbientStarfield(getAmbientStarfieldCounts(window.innerWidth));
+    this.bindMobileViewportSize();
     this.render();
   }
 
   disconnectedCallback() {
+    if (this.syncViewportSize) {
+      window.visualViewport?.removeEventListener('resize', this.syncViewportSize);
+      window.visualViewport?.removeEventListener('scroll', this.syncViewportSize);
+      window.removeEventListener('resize', this.syncViewportSize);
+      this.mobileViewportQuery.removeEventListener('change', this.syncViewportSize);
+      this.syncViewportSize = undefined;
+    }
     this.initialized = false;
+  }
+
+  private bindMobileViewportSize() {
+    const sync = () => {
+      if (!this.mobileViewportQuery.matches) {
+        this.style.removeProperty('height');
+        this.style.removeProperty('width');
+        return;
+      }
+
+      const viewport = window.visualViewport;
+      if (!viewport) return;
+
+      this.style.height = `${Math.ceil(viewport.height + viewport.offsetTop)}px`;
+      this.style.removeProperty('width');
+    };
+
+    this.syncViewportSize = sync;
+    sync();
+    window.visualViewport?.addEventListener('resize', sync);
+    window.visualViewport?.addEventListener('scroll', sync);
+    window.addEventListener('resize', sync);
+    this.mobileViewportQuery.addEventListener('change', sync);
   }
 
   private render() {

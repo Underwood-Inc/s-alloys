@@ -1,3 +1,4 @@
+import { subscribeExtrusionAnimation } from './extrusionAnimationHub.js';
 import { renderExtrusion } from './renderExtrusion.js';
 import type { ExtrusionModel } from './types.js';
 
@@ -26,15 +27,14 @@ export function startExtrusionLoop(
   clock: ExtrusionClock = wallExtrusionClock,
   periodMs = 4000,
 ): () => void {
-  const start = clock.now();
-  let frame = 0;
+  const handle = subscribeExtrusionAnimation(ctx, model, layout, clock, periodMs);
+  return () => handle.dispose();
+}
 
-  const tick = () => {
-    const yaw = yawFromElapsed(clock.now() - start, periodMs);
-    renderExtrusion(ctx, model, { ...layout, yaw });
-    frame = requestAnimationFrame(tick);
-  };
-
-  frame = requestAnimationFrame(tick);
-  return () => cancelAnimationFrame(frame);
+export function renderExtrusionFrame(
+  ctx: CanvasRenderingContext2D,
+  model: ExtrusionModel,
+  layout: ExtrusionLoopLayout,
+): void {
+  renderExtrusion(ctx, model, { ...layout, yaw: 0 });
 }

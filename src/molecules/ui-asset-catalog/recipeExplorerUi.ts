@@ -1,5 +1,7 @@
 /** Committed paths under public/guide/ui/ — edit assets in place; never regenerate via scripts. */
 
+import { assetUrl } from '../../lib/assetUrl.js';
+
 export const INGOT_RING_RADIUS_PERCENT = 38;
 
 /** Ten alloys in cycle order — matches hero icon frames. */
@@ -27,8 +29,7 @@ export function ingotRingPosition(index: number, total: number): { left: number;
 }
 
 export function recipeExplorerUiAsset(baseUrl: string, file: string): string {
-  const root = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-  return `${root}guide/ui/${file}`;
+  return assetUrl(`guide/ui/${file}`, baseUrl);
 }
 
 export const RECIPE_EXPLORER_UI = {

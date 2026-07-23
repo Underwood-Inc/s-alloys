@@ -17,6 +17,13 @@ export interface ViewportTooltipOptions {
   preferred?: ViewportTooltipPlacement[];
 }
 
+interface AxisRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
@@ -66,6 +73,83 @@ function overflowAmount(
   return overflowTop + overflowLeft + overflowBottom + overflowRight;
 }
 
+export function rectsOverlap(a: AxisRect, b: DOMRectReadOnly, padding = 0): boolean {
+  return !(
+    a.left + a.width + padding <= b.left
+    || b.left + b.width + padding <= a.left
+    || a.top + a.height + padding <= b.top
+    || b.top + b.height + padding <= a.top
+  );
+}
+
+export function anchorOverlapArea(
+  top: number,
+  left: number,
+  size: ViewportSize,
+  anchor: DOMRectReadOnly,
+): number {
+  const tooltip: AxisRect = { top, left, width: size.width, height: size.height };
+  if (!rectsOverlap(tooltip, anchor)) return 0;
+
+  const overlapLeft = Math.max(left, anchor.left);
+  const overlapTop = Math.max(top, anchor.top);
+  const overlapRight = Math.min(left + size.width, anchor.right);
+  const overlapBottom = Math.min(top + size.height, anchor.bottom);
+  return Math.max(0, overlapRight - overlapLeft) * Math.max(0, overlapBottom - overlapTop);
+}
+
+function clampToViewport(
+  top: number,
+  left: number,
+  size: ViewportSize,
+  viewport: ViewportSize,
+  margin: number,
+): { top: number; left: number } {
+  return {
+    top: clamp(top, margin, Math.max(margin, viewport.height - size.height - margin)),
+    left: clamp(left, margin, Math.max(margin, viewport.width - size.width - margin)),
+  };
+}
+
+function nudgeAwayFromAnchor(
+  top: number,
+  left: number,
+  size: ViewportSize,
+  anchor: DOMRectReadOnly,
+  viewport: ViewportSize,
+  margin: number,
+  gap: number,
+): { top: number; left: number } {
+  let nextTop = top;
+  let nextLeft = left;
+
+  const current = (): AxisRect => ({ top: nextTop, left: nextLeft, width: size.width, height: size.height });
+  if (!rectsOverlap(current(), anchor)) {
+    return clampToViewport(nextTop, nextLeft, size, viewport, margin);
+  }
+
+  const spaceAbove = anchor.top - margin;
+  const spaceBelow = viewport.height - margin - anchor.bottom;
+  const spaceLeft = anchor.left - margin;
+  const spaceRight = viewport.width - margin - anchor.right;
+
+  if (spaceBelow >= spaceAbove) {
+    nextTop = anchor.bottom + gap;
+  } else {
+    nextTop = anchor.top - gap - size.height;
+  }
+
+  if (rectsOverlap(current(), anchor)) {
+    if (spaceRight >= spaceLeft) {
+      nextLeft = anchor.right + gap;
+    } else {
+      nextLeft = anchor.left - gap - size.width;
+    }
+  }
+
+  return clampToViewport(nextTop, nextLeft, size, viewport, margin);
+}
+
 export function computeViewportTooltipPosition(
   anchor: DOMRectReadOnly,
   size: ViewportSize,
@@ -76,24 +160,33 @@ export function computeViewportTooltipPosition(
   const margin = options.margin ?? 12;
   const preferred = options.preferred ?? ['bottom', 'right', 'top', 'left'];
 
-  const candidates = preferred.map((placement) => {
+  const candidates = preferred.map((placement, order) => {
     const raw = coordsForPlacement(placement, anchor, size, gap);
-    const left = clamp(raw.left, margin, Math.max(margin, viewport.width - size.width - margin));
-    const top = clamp(raw.top, margin, Math.max(margin, viewport.height - size.height - margin));
+    const clamped = clampToViewport(raw.top, raw.left, size, viewport, margin);
+    const nudged = nudgeAwayFromAnchor(clamped.top, clamped.left, size, anchor, viewport, margin, gap);
     return {
       placement,
-      top,
-      left,
-      overflow: overflowAmount(top, left, size, viewport, margin),
+      order,
+      top: nudged.top,
+      left: nudged.left,
+      overflow: overflowAmount(nudged.top, nudged.left, size, viewport, margin),
+      anchorOverlap: anchorOverlapArea(nudged.top, nudged.left, size, anchor),
     };
   });
 
-  candidates.sort((a, b) => a.overflow - b.overflow);
+  candidates.sort((a, b) => {
+    if (a.anchorOverlap !== b.anchorOverlap) return a.anchorOverlap - b.anchorOverlap;
+    if (a.overflow !== b.overflow) return a.overflow - b.overflow;
+    return a.order - b.order;
+  });
+
   const best = candidates[0] ?? {
     placement: preferred[0] ?? 'bottom',
     top: margin,
     left: margin,
     overflow: 0,
+    anchorOverlap: 0,
+    order: 0,
   };
 
   return {

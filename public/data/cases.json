@@ -1,6 +1,6 @@
 {
-  "datapack_version": "1.0.43",
-  "generated_at": "2026-07-21T17:53:51.808Z",
+  "datapack_version": "1.0.51",
+  "generated_at": "2026-07-23T09:12:00.167Z",
   "cases": [
     {
       "id": "SM-01",
@@ -9086,12 +9086,12 @@
       ]
     },
     {
-      "id": "E-cobalt-tools",
+      "id": "E-steel-boots",
       "suite": "effects",
       "kind": "effect",
-      "alloy": "cobalt",
-      "title": "Cobalt tools — Haste",
-      "objective": "Haste while holding mining tools.",
+      "alloy": "steel",
+      "title": "Steel boots — Slow Falling",
+      "objective": "Slow Falling while worn.",
       "severity": "major",
       "preconditions": [
         "Minecraft 26.2 world or Paper 26.2 server",
@@ -9100,18 +9100,109 @@
         "Operator / cheats available for test commands"
       ],
       "input": [
-        "Hold each tool in mainhand 5–8s"
+        "Equip",
+        "Wait 5–8s"
+      ],
+      "steps": [
+        "Equip.",
+        "Confirm Slow Falling.",
+        "Unequip."
+      ],
+      "expect": [
+        "Slow Falling amp 0 while worn (infinite duration while equipped)"
+      ],
+      "mustNot": [
+        "Slow Falling from boots sitting in inventory"
+      ]
+    },
+    {
+      "id": "E-cobalt-pick",
+      "suite": "effects",
+      "kind": "effect",
+      "alloy": "cobalt",
+      "title": "Cobalt pickaxe — Haste",
+      "objective": "Haste while holding pickaxe only.",
+      "severity": "major",
+      "preconditions": [
+        "Minecraft 26.2 world or Paper 26.2 server",
+        "Alloys datapack enabled as world/datapacks/Alloys.zip",
+        "World restarted after installing or updating the datapack (not /reload only)",
+        "Operator / cheats available for test commands"
+      ],
+      "input": [
+        "Hold pickaxe in mainhand 5–8s"
       ],
       "steps": [
         "Hold pickaxe.",
         "Confirm Haste.",
-        "Repeat shovel/axe/hoe."
+        "Switch to shovel/axe/hoe and confirm no Haste."
       ],
       "expect": [
-        "Haste amp 0 for each listed tool"
+        "Haste amp 0 while pickaxe held"
       ],
       "mustNot": [
-        "Haste when tool is not held"
+        "Haste on shovel, axe, or hoe",
+        "Haste when pickaxe is not held"
+      ]
+    },
+    {
+      "id": "E-cobalt-helmet",
+      "suite": "effects",
+      "kind": "effect",
+      "alloy": "cobalt",
+      "title": "Cobalt helmet — Low-light vision",
+      "objective": "Night Vision while helmet worn.",
+      "severity": "major",
+      "preconditions": [
+        "Minecraft 26.2 world or Paper 26.2 server",
+        "Alloys datapack enabled as world/datapacks/Alloys.zip",
+        "World restarted after installing or updating the datapack (not /reload only)",
+        "Operator / cheats available for test commands"
+      ],
+      "input": [
+        "Equip",
+        "Wait 5–8s"
+      ],
+      "steps": [
+        "Equip.",
+        "Confirm Night Vision.",
+        "Unequip."
+      ],
+      "expect": [
+        "Night Vision amp 0 while worn"
+      ],
+      "mustNot": [
+        "Night Vision while helmet is only in bag"
+      ]
+    },
+    {
+      "id": "E-nickel-leggings",
+      "suite": "effects",
+      "kind": "effect",
+      "alloy": "nickel",
+      "title": "Nickel leggings — Absorption",
+      "objective": "Absorption while worn.",
+      "severity": "major",
+      "preconditions": [
+        "Minecraft 26.2 world or Paper 26.2 server",
+        "Alloys datapack enabled as world/datapacks/Alloys.zip",
+        "World restarted after installing or updating the datapack (not /reload only)",
+        "Operator / cheats available for test commands"
+      ],
+      "input": [
+        "Equip",
+        "Wait 5–8s"
+      ],
+      "steps": [
+        "Equip.",
+        "Confirm Absorption hearts.",
+        "Unequip."
+      ],
+      "expect": [
+        "Absorption amp 0 while worn"
+      ],
+      "mustNot": [
+        "Absorption from leggings in inventory only"
       ]
     },
     {
@@ -9120,7 +9211,7 @@
       "kind": "effect",
       "alloy": "platinum",
       "title": "Platinum held — +1 Luck",
-      "objective": "Luck attribute while holding tools/weapons.",
+      "objective": "Luck attribute on pickaxe and sword only.",
       "severity": "major",
       "preconditions": [
         "Minecraft 26.2 world or Paper 26.2 server",
@@ -9129,18 +9220,19 @@
         "Operator / cheats available for test commands"
       ],
       "input": [
-        "Hold in mainhand"
+        "Hold each in mainhand"
       ],
       "steps": [
-        "Hold.",
-        "Check luck attribute.",
-        "Switch away."
+        "Hold pickaxe.",
+        "Check +1 Luck.",
+        "Hold sword.",
+        "Hold bow/shovel and confirm no Luck."
       ],
       "expect": [
-        "+1 Luck (add_value) on mainhand"
+        "+1 Luck (add_value) on mainhand for pickaxe and sword"
       ],
       "mustNot": [
-        "Luck while item is not held"
+        "Luck on bow, crossbow, shovel, or armor while not held"
       ]
     },
     {
@@ -9318,11 +9410,40 @@
       ]
     },
     {
-      "id": "E-tin-none",
+      "id": "E-astral-leggings",
+      "suite": "effects",
+      "kind": "effect",
+      "alloy": "astral",
+      "title": "Astral leggings — Slow Falling",
+      "objective": "Slow Falling while worn.",
+      "severity": "major",
+      "preconditions": [
+        "Minecraft 26.2 world or Paper 26.2 server",
+        "Alloys datapack enabled as world/datapacks/Alloys.zip",
+        "World restarted after installing or updating the datapack (not /reload only)",
+        "Operator / cheats available for test commands"
+      ],
+      "input": [
+        "Equip"
+      ],
+      "steps": [
+        "Equip 5–8s.",
+        "Confirm Slow Falling.",
+        "Unequip."
+      ],
+      "expect": [
+        "Slow Falling amp 0 while worn"
+      ],
+      "mustNot": [
+        "Effect while leggings unequipped"
+      ]
+    },
+    {
+      "id": "E-tin-bronze-none",
       "suite": "effects",
       "kind": "effect",
       "alloy": "tin",
-      "title": "Tin / Bronze / Nickel — no passives",
+      "title": "Tin / Bronze — no passives",
       "objective": "Alloys without passive_traits add no potion effects.",
       "severity": "minor",
       "preconditions": [
@@ -9336,14 +9457,97 @@
       ],
       "steps": [
         "Wear Tin set.",
-        "Wear Bronze set.",
-        "Wear Nickel set."
+        "Wear Bronze set."
       ],
       "expect": [
         "No unexpected Alloys-driven potion effects"
       ],
       "mustNot": [
-        "Haste / Resistance / etc. from these sets"
+        "Haste / Resistance / Absorption / etc. from these sets"
+      ]
+    },
+    {
+      "id": "E-silver-bow-spectral",
+      "suite": "effects",
+      "kind": "effect",
+      "alloy": "silver",
+      "title": "Silver bow — spectral arrows",
+      "objective": "Fired arrows become spectral.",
+      "severity": "major",
+      "preconditions": [
+        "Minecraft 26.2 world or Paper 26.2 server",
+        "Alloys datapack enabled as world/datapacks/Alloys.zip",
+        "World restarted after installing or updating the datapack (not /reload only)",
+        "Operator / cheats available for test commands"
+      ],
+      "input": [
+        "Shoot plain arrow with Silver Bow"
+      ],
+      "steps": [
+        "Fire at mob or block.",
+        "Inspect projectile entity."
+      ],
+      "expect": [
+        "Projectile is spectral_arrow (or equivalent spectral behavior)"
+      ],
+      "mustNot": [
+        "Plain arrow with no transformation"
+      ]
+    },
+    {
+      "id": "E-nickel-bow-poison",
+      "suite": "effects",
+      "kind": "effect",
+      "alloy": "nickel",
+      "title": "Nickel bow — poison arrows",
+      "objective": "Fired arrows become poison tipped.",
+      "severity": "major",
+      "preconditions": [
+        "Minecraft 26.2 world or Paper 26.2 server",
+        "Alloys datapack enabled as world/datapacks/Alloys.zip",
+        "World restarted after installing or updating the datapack (not /reload only)",
+        "Operator / cheats available for test commands"
+      ],
+      "input": [
+        "Shoot with Nickel Bow"
+      ],
+      "steps": [
+        "Fire at target.",
+        "Confirm poison effect on hit."
+      ],
+      "expect": [
+        "Tipped poison arrow behavior"
+      ],
+      "mustNot": [
+        "Untipped plain arrow only"
+      ]
+    },
+    {
+      "id": "E-cobalt-xbow-slowness",
+      "suite": "effects",
+      "kind": "effect",
+      "alloy": "cobalt",
+      "title": "Cobalt crossbow — slowness bolts",
+      "objective": "Fired bolts apply slowness.",
+      "severity": "major",
+      "preconditions": [
+        "Minecraft 26.2 world or Paper 26.2 server",
+        "Alloys datapack enabled as world/datapacks/Alloys.zip",
+        "World restarted after installing or updating the datapack (not /reload only)",
+        "Operator / cheats available for test commands"
+      ],
+      "input": [
+        "Load and fire"
+      ],
+      "steps": [
+        "Fire at mob.",
+        "Confirm Slowness on hit."
+      ],
+      "expect": [
+        "Slowness tipped arrow / slowness effect from bolt"
+      ],
+      "mustNot": [
+        "Plain arrow with no slowness"
       ]
     },
     {

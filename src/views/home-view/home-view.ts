@@ -1,4 +1,6 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
+import { renderAssetImage } from '../../atoms/asset-image/renderAssetImage.js';
+import { assetUrl } from '../../lib/assetUrl.js';
 import { navigate } from '../../organisms/site-header/site-header.js';
 import '../../organisms/site-icon/site-icon.js';
 
@@ -56,12 +58,12 @@ export class AlloysHomeView extends HTMLElement {
         <div class="home-view__cards">
           ${GUIDE_CHAPTERS.map((chapter) => `
             <button type="button" class="home-view__card" data-guide-slug="${chapter.slug}">
-              <img
-                src="${assetBase}${chapter.image}"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
+              ${renderAssetImage({
+                src: assetUrl(chapter.image, assetBase),
+                alt: '',
+                loading: 'lazy',
+                decoding: 'async',
+              })}
               <span class="home-view__card-label">${escapeHtml(chapter.label)}</span>
               <h3>${escapeHtml(chapter.title)}</h3>
               <p>${escapeHtml(chapter.summary)}</p>
@@ -72,12 +74,12 @@ export class AlloysHomeView extends HTMLElement {
 
       <aside class="home-view__qa" aria-labelledby="home-qa-title">
         <button type="button" class="home-view__qa-visual" data-go="checklist" aria-label="Open playtest checklist">
-          <img
-            src="${assetBase}guide/chapters/checklist.png"
-            alt=""
-            loading="lazy"
-            decoding="async"
-          />
+          ${renderAssetImage({
+            src: assetUrl('guide/chapters/checklist.png', assetBase),
+            alt: '',
+            loading: 'lazy',
+            decoding: 'async',
+          })}
         </button>
         <div class="home-view__qa-copy">
           <span class="home-view__qa-eyebrow">For teams</span>

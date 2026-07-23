@@ -94,7 +94,9 @@
   cursor: pointer;
 
   &:hover img,
-  &:focus-visible img {
+  &:focus-visible img,
+  &:hover .asset-image__img,
+  &:focus-visible .asset-image__img {
     filter: drop-shadow(0 0 6px rgb(244 200 106 / 55%));
   }
 }
@@ -106,7 +108,14 @@
   height: var(--craft-icon-size);
   pointer-events: none;
 
-  img {
+  alloys-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  img,
+  .asset-image__img {
     display: block;
     width: 100%;
     height: 100%;
@@ -120,13 +129,18 @@
 
 .crafting-grid__slot:hover img,
 .crafting-grid__slot:focus-visible img,
+.crafting-grid__slot:hover .asset-image__img,
+.crafting-grid__slot:focus-visible .asset-image__img,
 .crafting-grid__result:hover img,
-.crafting-grid__result:focus-visible img {
+.crafting-grid__result:focus-visible img,
+.crafting-grid__result:hover .asset-image__img,
+.crafting-grid__result:focus-visible .asset-image__img {
   transform: scale(1.05);
   filter: drop-shadow(0 2px 4px rgb(0 0 0 / 45%)) brightness(1.1);
 }
 
-.crafting-grid__result .crafting-grid__icon img {
+.crafting-grid__result .crafting-grid__icon img,
+.crafting-grid__result .crafting-grid__icon .asset-image__img {
   filter: drop-shadow(0 4px 10px rgb(0 0 0 / 50%));
 }
 
@@ -141,7 +155,9 @@
   width: 3rem;
   filter: drop-shadow(0 0 10px rgb(244 200 106 / 25%));
 
-  img {
+  alloys-image,
+  img,
+  .asset-image__img {
     width: 100%;
     height: auto;
     image-rendering: auto;
@@ -197,4 +213,24 @@
   text-align: center;
   color: var(--text-secondary, #a8a4b4);
   font-family: var(--font-minecraft-sm);
+}
+
+@media (max-width: 720px) {
+  .crafting-grid__surface {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.65rem;
+    width: 100%;
+  }
+
+  .crafting-grid__arrow {
+    width: 2.25rem;
+    transform: rotate(90deg);
+  }
+
+  .crafting-grid {
+    --craft-input-width: min(100%, 15.5rem);
+    --craft-result-width: min(100%, 15.5rem);
+    padding-inline: 0.25rem;
+  }
 }

@@ -1,4 +1,5 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
+import { assetUrl } from '../../lib/assetUrl.js';
 import { buildRecipeForTab } from '../../molecules/recipe-catalog/index.js';
 import { fragmentShowcaseEntries } from '../../molecules/recipe-catalog/fragmentShowcaseCatalog.js';
 import { bindSharedViewportPanel } from '../../molecules/viewport-tooltip/bindSharedViewportPanel.js';
@@ -47,7 +48,7 @@ export class FragmentShowcase extends HTMLElement {
     this.innerHTML = `
       <ul class="fragment-showcase__list" role="list">
         ${entries.map(({ alloy, vein }) => {
-          const icon = `${baseUrl}guide/fragments/${alloy.id}.png`;
+          const icon = assetUrl(`guide/fragments/${alloy.id}.png`, baseUrl);
           return `
             <li class="fragment-showcase__item">
               <div class="fragment-showcase__row">

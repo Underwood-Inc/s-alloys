@@ -2,6 +2,7 @@ import { test, expect, beforeEach } from 'vitest';
 import {
   canCloseTooltipLayer,
   closeTooltipLayer,
+  getTooltipLayer,
   openTooltipLayer,
   resetTooltipLayerStack,
   tooltipLayerStackDepth,
@@ -43,4 +44,26 @@ test('[FR-009] nested tooltip layers block parent close until child closes', () 
 
   parentSurface.remove();
   childSurface.remove();
+});
+
+test('[FR-009] opening a root tooltip layer closes previous root layers', () => {
+  const firstAnchor = document.createElement('button');
+  const firstSurface = document.createElement('div');
+  const secondAnchor = document.createElement('button');
+  const secondSurface = document.createElement('div');
+
+  const firstId = openTooltipLayer({
+    kind: 'game-tooltip',
+    anchor: firstAnchor,
+    surface: firstSurface,
+  });
+  const secondId = openTooltipLayer({
+    kind: 'game-tooltip',
+    anchor: secondAnchor,
+    surface: secondSurface,
+  });
+
+  expect(secondId).toBeGreaterThan(firstId);
+  expect(tooltipLayerStackDepth()).toBe(1);
+  expect(getTooltipLayer(firstId)).toBeUndefined();
 });

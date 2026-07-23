@@ -1,3 +1,4 @@
+import { assetUrl } from '../../lib/assetUrl.js';
 import type { IngredientView } from '../crafting-model/index.js';
 
 export type IngredientId =
@@ -52,7 +53,7 @@ export function ingredient(
   return {
     id: entry.id,
     label: entry.label,
-    icon: `${baseUrl}guide/ingredients/${entry.iconFile}`,
+    icon: assetUrl(`guide/ingredients/${entry.iconFile}`, baseUrl),
     ...overrides,
   };
 }
@@ -65,7 +66,7 @@ export function alloyIngotIngredient(
   return {
     id: `alloy_ingot:${alloyId}`,
     label: `${alloyName} ingot`,
-    icon: `${baseUrl}guide/ingots/${alloyId}.png`,
+    icon: assetUrl(`guide/ingots/${alloyId}.png`, baseUrl),
   };
 }
 
@@ -77,7 +78,7 @@ export function alloyFragmentIngredient(
   return {
     id: `alloy_fragment:${alloyId}`,
     label: `${alloyName} fragment`,
-    icon: `${baseUrl}guide/fragments/${alloyId}.png`,
+    icon: assetUrl(`guide/fragments/${alloyId}.png`, baseUrl),
   };
 }
 
@@ -91,6 +92,6 @@ export function gearResultIngredient(
   return {
     id: `gear:${alloyId}:${gearId}`,
     label: `${alloyName} ${gearLabel.toLowerCase()}`,
-    icon: `${baseUrl}guide/gear/${alloyId}_${gearId}.png`,
+    icon: assetUrl(`guide/gear/${alloyId}_${gearId}.png`, baseUrl),
   };
 }

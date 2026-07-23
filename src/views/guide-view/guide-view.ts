@@ -1,4 +1,6 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
+import { renderAssetImage } from '../../atoms/asset-image/renderAssetImage.js';
+import { assetUrl } from '../../lib/assetUrl.js';
 import { navigate } from '../../organisms/site-header/site-header.js';
 import { GUIDE_ARTICLES, getGuideArticle, renderGuideHtml } from '../../content/guide/guideCatalog.js';
 import { currentAppPath, resolveRoute } from '../../app/router.js';
@@ -42,11 +44,12 @@ export class AlloysGuideView extends HTMLElement {
       this.innerHTML = `
         <header class="guide-view__header">
           <div class="guide-view__header-top">
-            <a class="guide-view__back" href="${assetBase}guide">← Guide</a>
+            <a class="guide-view__back" href="${assetBase}guide"><span class="guide-view__back-arrow" aria-hidden="true">←</span> Guide</a>
             <span class="guide-view__eyebrow">Player guide</span>
           </div>
           <h1>${escapeHtml(article.title)}</h1>
-          <p class="guide-view__summary">${escapeHtml(article.summary)}</p>
+          ${article.lede ? `<p class="guide-view__lede">${escapeHtml(article.lede)}</p>` : ''}
+          ${article.summary ? `<p class="guide-view__summary">${escapeHtml(article.summary)}</p>` : ''}
         </header>
         <article class="guide-view__body">${renderGuideHtml(article.body, assetBase)}</article>
       `;
@@ -67,15 +70,15 @@ export class AlloysGuideView extends HTMLElement {
             data-guide-slug="${item.slug}"
             class="guide-view__chapter"
           >
-            <img
-              src="${assetBase}${item.cardImage}"
-              alt=""
-              loading="lazy"
-              decoding="async"
-            />
+            ${renderAssetImage({
+              src: assetUrl(item.cardImage, assetBase),
+              alt: '',
+              loading: 'lazy',
+              decoding: 'async',
+            })}
             <span class="guide-view__chapter-num">Chapter ${chapterNumber(index)}</span>
             <h3>${escapeHtml(item.title)}</h3>
-            <p class="guide-view__chapter-summary">${escapeHtml(item.summary)}</p>
+            ${(item.summary ?? item.lede) ? `<p class="guide-view__chapter-summary">${escapeHtml(item.summary ?? item.lede ?? '')}</p>` : ''}
           </a>
         `).join('')}
       </nav>

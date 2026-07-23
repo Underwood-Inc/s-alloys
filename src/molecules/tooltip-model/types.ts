@@ -37,6 +37,8 @@ export interface GameTooltipData {
 export interface TooltipShowDetail {
   anchor: HTMLElement;
   tooltip: GameTooltipData;
+  /** Hover-opened tooltips auto-dismiss after TOOLTIP_HOVER_MAX_MS. */
+  trigger?: 'hover' | 'focus';
 }
 
 export const TOOLTIP_SHOW_EVENT = 'alloys-tooltip-show';

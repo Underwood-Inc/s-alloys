@@ -4,13 +4,15 @@ import {
   parseViewportTooltipPlacement,
 } from './applyViewportTooltipAnchor.js';
 import { portalViewportPanel, unportalViewportPanel } from './portalViewportPanel.js';
-import { VIEWPORT_TOOLTIP_HIDE_DELAY_MS } from './viewportTooltipConstants.js';
+import { VIEWPORT_TOOLTIP_HIDE_DELAY_MS, TOOLTIP_HOVER_MAX_MS } from './viewportTooltipConstants.js';
+import { isPointerOverElement, shouldDismissHoveredTooltip } from './tooltipPointerDismiss.js';
 import {
   canCloseTooltipLayer,
   closeTooltipLayer,
   forceCloseTooltipLayer,
   openTooltipLayer,
   subscribeTooltipLayerChildClosed,
+  subscribeTooltipLayerForceClosed,
 } from '../tooltip-stack/tooltipLayerStack.js';
 
 const TRIGGER_SELECTOR = '[data-viewport-tooltip]';
@@ -39,6 +41,7 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
   let activeTrigger: HTMLElement | null = null;
   let pinnedTrigger: HTMLElement | null = null;
   let hideTimer: ReturnType<typeof setTimeout> | null = null;
+  let hoverMaxTimer: ReturnType<typeof setTimeout> | null = null;
   const cleanups: Array<() => void> = [];
   const canHover = prefersHover();
 
@@ -48,6 +51,12 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     hideTimer = null;
   };
 
+  const clearHoverMax = () => {
+    if (!hoverMaxTimer) return;
+    clearTimeout(hoverMaxTimer);
+    hoverMaxTimer = null;
+  };
+
   const hideTooltip = (trigger: HTMLElement) => {
     const tooltip = triggerTooltips.get(trigger);
     if (!tooltip) return;
@@ -55,6 +64,7 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     const layerId = triggerLayerIds.get(trigger);
     if (layerId !== undefined && !canCloseTooltipLayer(layerId)) return;
 
+    clearHoverMax();
     tooltip.classList.remove('is-open', 'is-pinned');
     unportalViewportPanel(tooltip);
     clearViewportTooltipAnchor(tooltip);
@@ -74,7 +84,7 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     for (const trigger of triggers) hideTooltip(trigger);
   };
 
-  const showTooltip = (trigger: HTMLElement, pinned = false) => {
+  const showTooltip = (trigger: HTMLElement, pinned = false, viaHover = false) => {
     const tooltip = triggerTooltips.get(trigger);
     if (!tooltip) return;
 
@@ -82,6 +92,8 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
       hideTooltip(activeTrigger);
     }
 
+    cancelHide();
+    clearHoverMax();
     activeTrigger = trigger;
     pinnedTrigger = pinned ? trigger : pinnedTrigger;
     tooltip.classList.toggle('is-pinned', pinnedTrigger === trigger);
@@ -97,6 +109,14 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     applyViewportTooltipAnchor(trigger, tooltip, {
       preferred: parseViewportTooltipPlacement(trigger.dataset.tooltipPlacement),
     });
+
+    if (viaHover && !pinned) {
+      hoverMaxTimer = setTimeout(() => {
+        if (pinnedTrigger === trigger) return;
+        if (isPointerOverElement(trigger) || isPointerOverElement(tooltip)) return;
+        hideTooltip(trigger);
+      }, TOOLTIP_HOVER_MAX_MS);
+    }
   };
 
   const scheduleHide = (trigger: HTMLElement) => {
@@ -107,13 +127,15 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     hideTimer = setTimeout(() => {
       hideTimer = null;
       if (pinnedTrigger === trigger || activeTrigger !== trigger) return;
+      const tooltip = triggerTooltips.get(trigger);
+      if (isPointerOverElement(trigger) || isPointerOverElement(tooltip ?? null)) return;
       hideTooltip(trigger);
     }, VIEWPORT_TOOLTIP_HIDE_DELAY_MS);
   };
 
   const openFromHover = (trigger: HTMLElement) => {
     cancelHide();
-    showTooltip(trigger, false);
+    showTooltip(trigger, false, true);
   };
 
   const togglePinned = (trigger: HTMLElement) => {
@@ -132,6 +154,17 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     applyViewportTooltipAnchor(activeTrigger, tooltip, {
       preferred: parseViewportTooltipPlacement(activeTrigger.dataset.tooltipPlacement),
     });
+  };
+
+  const handleScroll = () => {
+    if (!activeTrigger) return;
+    const tooltip = triggerTooltips.get(activeTrigger);
+    if (!tooltip?.classList.contains('is-open')) return;
+    if (shouldDismissHoveredTooltip(activeTrigger, [tooltip])) {
+      if (pinnedTrigger !== activeTrigger) hideTooltip(activeTrigger);
+      return;
+    }
+    repositionActive();
   };
 
   for (const trigger of triggers) {
@@ -205,7 +238,23 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     });
   }
 
-  const onViewportChange = () => repositionActive();
+  const unsubscribeChildClosed = subscribeTooltipLayerChildClosed((parentId) => {
+    for (const trigger of triggers) {
+      if (triggerLayerIds.get(trigger) !== parentId) continue;
+      const tooltip = triggerTooltips.get(trigger);
+      if (isPointerOverElement(trigger) || isPointerOverElement(tooltip ?? null)) return;
+      scheduleHide(trigger);
+    }
+  });
+
+  const unsubscribeForceClosed = subscribeTooltipLayerForceClosed((layerId) => {
+    for (const trigger of triggers) {
+      if (triggerLayerIds.get(trigger) !== layerId) continue;
+      hideTooltip(trigger);
+    }
+  });
+
+  const onViewportChange = () => handleScroll();
   const onDocumentPointerDown = (event: Event) => {
     if (!activeTrigger) return;
     const tooltip = triggerTooltips.get(activeTrigger);
@@ -216,15 +265,6 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
   const onDocumentKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && activeTrigger) hideAll();
   };
-
-  const unsubscribeChildClosed = subscribeTooltipLayerChildClosed((parentId) => {
-    for (const trigger of triggers) {
-      if (triggerLayerIds.get(trigger) !== parentId) continue;
-      const tooltip = triggerTooltips.get(trigger);
-      if (tooltip?.matches(':hover') || trigger.matches(':hover')) return;
-      scheduleHide(trigger);
-    }
-  });
 
   window.addEventListener('resize', onViewportChange);
   window.addEventListener('scroll', onViewportChange, true);
@@ -237,7 +277,9 @@ export function bindViewportTooltips(root: ParentNode = document): () => void {
     document.removeEventListener('pointerdown', onDocumentPointerDown);
     document.removeEventListener('keydown', onDocumentKeyDown);
     unsubscribeChildClosed();
+    unsubscribeForceClosed();
     cancelHide();
+    clearHoverMax();
     for (const trigger of triggers) {
       const layerId = triggerLayerIds.get(trigger);
       if (layerId !== undefined) forceCloseTooltipLayer(layerId);

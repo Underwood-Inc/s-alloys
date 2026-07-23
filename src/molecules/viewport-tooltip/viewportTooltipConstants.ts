@@ -1,1 +1,2 @@
 export const VIEWPORT_TOOLTIP_HIDE_DELAY_MS = 280;
+export const TOOLTIP_HOVER_MAX_MS = 3000;

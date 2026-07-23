@@ -1,4 +1,5 @@
-import { escapeHtml } from '../../atoms/dom/defineElement.js';
+import { renderAssetImage } from '../../atoms/asset-image/renderAssetImage.js';
+import { assetUrl } from '../../lib/assetUrl.js';
 import type { QaCase } from '../qa-session/qaSessionTypes.js';
 import type { GearKind } from '../recipe-catalog/gearLayouts.js';
 
@@ -32,10 +33,6 @@ function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-}
-
 export function parseGearKind(caseId: string, title: string): GearKind | null {
   const haystack = `${caseId} ${title}`.toLowerCase();
   for (const kind of GEAR_KINDS) {
@@ -45,20 +42,19 @@ export function parseGearKind(caseId: string, title: string): GearKind | null {
 }
 
 export function resolveQaCaseIcon(testCase: QaCase, baseUrl = import.meta.env.BASE_URL): QaCaseIcon {
-  const base = normalizeBaseUrl(baseUrl);
   const alloy = testCase.alloy;
 
   if (alloy) {
     if (testCase.suite === 'ingots' || caseIdLooksLikeIngot(testCase.id)) {
       return {
-        url: `${base}guide/ingots/${alloy}.png`,
+        url: assetUrl(`guide/ingots/${alloy}.png`, baseUrl),
         label: `${titleCase(alloy)} ingot`,
       };
     }
 
     if (testCase.suite === 'fragments' || caseIdLooksLikeFragment(testCase.id)) {
       return {
-        url: `${base}guide/fragments/${alloy}.png`,
+        url: assetUrl(`guide/fragments/${alloy}.png`, baseUrl),
         label: `${titleCase(alloy)} fragment`,
       };
     }
@@ -66,13 +62,13 @@ export function resolveQaCaseIcon(testCase: QaCase, baseUrl = import.meta.env.BA
     const gear = parseGearKind(testCase.id, testCase.title);
     if (gear) {
       return {
-        url: `${base}guide/gear/${alloy}_${gear}.png`,
+        url: assetUrl(`guide/gear/${alloy}_${gear}.png`, baseUrl),
         label: `${titleCase(alloy)} ${gear}`,
       };
     }
 
     return {
-      url: `${base}guide/ingots/${alloy}.png`,
+      url: assetUrl(`guide/ingots/${alloy}.png`, baseUrl),
       label: `${titleCase(alloy)} ingot`,
     };
   }
@@ -80,13 +76,13 @@ export function resolveQaCaseIcon(testCase: QaCase, baseUrl = import.meta.env.BA
   const fallback = SUITE_FALLBACK_ICONS[testCase.suite];
   if (fallback) {
     return {
-      url: `${base}${fallback.file}`,
+      url: assetUrl(fallback.file, baseUrl),
       label: fallback.label,
     };
   }
 
   return {
-    url: `${base}guide/chapters/checklist.png`,
+    url: assetUrl('guide/chapters/checklist.png', baseUrl),
     label: 'Test case',
   };
 }
@@ -102,5 +98,12 @@ function caseIdLooksLikeFragment(caseId: string): boolean {
 export function renderQaCaseIcon(testCase: QaCase, options: { size?: 'list' | 'detail'; baseUrl?: string } = {}): string {
   const icon = resolveQaCaseIcon(testCase, options.baseUrl);
   const sizeClass = options.size === 'list' ? 'qa-case-icon--list' : 'qa-case-icon--detail';
-  return `<img class="qa-case-icon ${sizeClass}" src="${icon.url}" alt="" width="48" height="48" loading="lazy" decoding="async" title="${escapeHtml(icon.label)}" />`;
+  return renderAssetImage({
+    src: icon.url,
+    alt: '',
+    loading: 'lazy',
+    decoding: 'async',
+    title: icon.label,
+    class: `qa-case-icon ${sizeClass}`,
+  });
 }

@@ -1,4 +1,6 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
+import { renderAssetImage } from '../../atoms/asset-image/renderAssetImage.js';
+import { assetUrl } from '../../lib/assetUrl.js';
 import { hideGameTooltip, showGameTooltip } from '../../atoms/tooltip/dispatchTooltip.js';
 import { openRecipeExplorer } from '../../molecules/recipe-explorer/openRecipeExplorer.js';
 import { recipeToGrid, type CraftingRecipeView, type IngredientView } from '../../molecules/crafting-model/index.js';
@@ -57,8 +59,7 @@ export class CraftingGrid extends HTMLElement {
 
   private uiAsset(path: string): string {
     const base = this.getAttribute('asset-base') ?? this.assetBase;
-    const root = base.endsWith('/') ? base : `${base}/`;
-    return `${root}guide/ui/${path}`;
+    return assetUrl(`guide/ui/${path}`, base);
   }
 
   private bindTooltips(slots: (IngredientView | null)[]) {
@@ -71,10 +72,11 @@ export class CraftingGrid extends HTMLElement {
       const selection = recipeSelectionFromIngredient(item);
 
       if (tooltip) {
-        const open = () => showGameTooltip(element, tooltip);
+        const openHover = () => showGameTooltip(element, tooltip, 'hover');
+        const openFocus = () => showGameTooltip(element, tooltip, 'focus');
         const close = () => hideGameTooltip(element);
-        element.addEventListener('mouseenter', open);
-        element.addEventListener('focus', open);
+        element.addEventListener('mouseenter', openHover);
+        element.addEventListener('focus', openFocus);
         element.addEventListener('mouseleave', close);
         element.addEventListener('blur', close);
       }
@@ -121,7 +123,13 @@ export class CraftingGrid extends HTMLElement {
           aria-label="${escapeHtml(item.label)}"
         >
           <span class="crafting-grid__icon" aria-hidden="true">
-            <img src="${escapeHtml(item.icon)}" alt="" loading="lazy" decoding="async" />
+            ${renderAssetImage({
+              src: item.icon,
+              alt: '',
+              loading: 'lazy',
+              decoding: 'async',
+              fit: 'contain',
+            })}
           </span>
         </button>
       `;
@@ -135,30 +143,29 @@ export class CraftingGrid extends HTMLElement {
       ${fx}
       <div class="crafting-grid__surface">
         <div class="crafting-grid__cluster crafting-grid__cluster--input">
-          <img
-            class="crafting-grid__frame"
-            src="${escapeHtml(this.uiAsset('crafting-panel-input.png'))}"
-            alt=""
-            width="930"
-            height="957"
-            decoding="async"
-          />
+          ${renderAssetImage({
+            src: this.uiAsset('crafting-panel-input.png'),
+            alt: '',
+            decoding: 'async',
+            class: 'crafting-grid__frame',
+          })}
           <div class="crafting-grid__overlay" aria-label="Crafting ingredients">
             <div class="crafting-grid__slots">${slotsHtml}</div>
           </div>
         </div>
         <div class="crafting-grid__arrow" aria-hidden="true">
-          <img src="${escapeHtml(this.uiAsset('crafting-arrow.png'))}" alt="" width="48" height="48" />
+          ${renderAssetImage({
+            src: this.uiAsset('crafting-arrow.png'),
+            alt: '',
+          })}
         </div>
         <div class="crafting-grid__cluster crafting-grid__cluster--result">
-          <img
-            class="crafting-grid__frame"
-            src="${escapeHtml(this.uiAsset('crafting-panel-result.png'))}"
-            alt=""
-            width="872"
-            height="868"
-            decoding="async"
-          />
+          ${renderAssetImage({
+            src: this.uiAsset('crafting-panel-result.png'),
+            alt: '',
+            decoding: 'async',
+            class: 'crafting-grid__frame',
+          })}
           <div class="crafting-grid__overlay" aria-label="Crafting result">
             <button
               type="button"
@@ -167,12 +174,13 @@ export class CraftingGrid extends HTMLElement {
               aria-label="${escapeHtml(recipe.result.label)}"
             >
               <span class="crafting-grid__icon" aria-hidden="true">
-                <img
-                  src="${escapeHtml(recipe.result.icon)}"
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                />
+                ${renderAssetImage({
+                  src: recipe.result.icon,
+                  alt: '',
+                  loading: 'lazy',
+                  decoding: 'async',
+                  fit: 'contain',
+                })}
               </span>
             </button>
           </div>

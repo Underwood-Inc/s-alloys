@@ -21,7 +21,7 @@ export function applyViewportTooltipAnchor(
   panel: HTMLElement,
   options: ViewportTooltipOptions = {},
 ): void {
-  const preferred = options.preferred ?? ['top', 'bottom', 'right', 'left'];
+  const preferred = options.preferred ?? ['bottom', 'top', 'right', 'left'];
   const margin = options.margin ?? 12;
 
   panel.style.position = 'fixed';

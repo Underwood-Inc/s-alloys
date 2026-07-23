@@ -1,5 +1,11 @@
-import type { AlloyCatalogEntry } from '../recipe-catalog/alloysRecipeCatalog.js';
-import { getAlloyById, recipeTabLabel, recipeTabsForAlloy, type RecipeTabId } from '../recipe-catalog/alloysRecipeCatalog.js';
+import { assetUrl, stripAssetVersion } from '../../lib/assetUrl.js';
+import {
+  getAlloyById,
+  recipeTabLabel,
+  recipeTabsForAlloy,
+  type AlloyCatalogEntry,
+  type RecipeTabId,
+} from '../recipe-catalog/alloysRecipeCatalog.js';
 import { buildFragmentTooltip, buildGearTooltip, buildIngotTooltip } from '../tooltip-model/buildGameTooltip.js';
 import type { GameTooltipData } from '../tooltip-model/types.js';
 import { GEAR_LAYOUT_BY_ID } from '../recipe-catalog/gearLayouts.js';
@@ -34,13 +40,14 @@ export function recipeSelectionFromModelId(modelId: string): RecipeSelection | n
 }
 
 export function recipeSelectionFromIcon(icon: string): RecipeSelection | null {
-  const ingot = icon.match(/\/guide\/ingots\/([^./?]+)\.png/i);
+  const path = stripAssetVersion(icon);
+  const ingot = path.match(/\/guide\/ingots\/([^./]+)\.png/i);
   if (ingot) return normalizeRecipeSelection({ alloyId: ingot[1], tab: 'ingot' });
 
-  const fragment = icon.match(/\/guide\/fragments\/([^./?]+)\.png/i);
+  const fragment = path.match(/\/guide\/fragments\/([^./]+)\.png/i);
   if (fragment) return normalizeRecipeSelection({ alloyId: fragment[1], tab: 'fragment' });
 
-  const gear = icon.match(/\/guide\/gear\/([^_]+)_([^.?]+)\.png/i);
+  const gear = path.match(/\/guide\/gear\/([^_]+)_([^.]+)\.png/i);
   if (gear) return normalizeRecipeSelection({ alloyId: gear[1], tab: gear[2] as RecipeTabId });
 
   return null;
@@ -92,14 +99,13 @@ export function normalizeBaseUrl(baseUrl: string): string {
 }
 
 export function selectionPreviewIcon(selection: RecipeSelection, baseUrl: string): string {
-  const root = normalizeBaseUrl(baseUrl);
   if (selection.tab === 'ingot') {
-    return `${root}guide/ingots/${selection.alloyId}.png`;
+    return assetUrl(`guide/ingots/${selection.alloyId}.png`, baseUrl);
   }
   if (selection.tab === 'fragment') {
-    return `${root}guide/fragments/${selection.alloyId}.png`;
+    return assetUrl(`guide/fragments/${selection.alloyId}.png`, baseUrl);
   }
-  return `${root}guide/gear/${selection.alloyId}_${selection.tab}.png`;
+  return assetUrl(`guide/gear/${selection.alloyId}_${selection.tab}.png`, baseUrl);
 }
 
 export function selectionTitle(alloy: AlloyCatalogEntry, tab: RecipeTabId): string {

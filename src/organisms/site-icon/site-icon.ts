@@ -1,7 +1,7 @@
 import { defineAlloysElement } from '../../atoms/dom/defineElement.js';
+import { renderAssetImage } from '../../atoms/asset-image/renderAssetImage.js';
 import {
   HERO_ALLOY_FRAMES,
-  displayPixelsForSize,
   defaultStaticPixelsForSize,
   heroFrameUrl,
   staticIconUrl,
@@ -85,22 +85,18 @@ export class AlloysSiteIcon extends HTMLElement {
   }
 
   private renderShell(): void {
-    const pixels = displayPixelsForSize(this.readSize());
-
     if (this.readVariant() === 'cycle') {
       this.innerHTML = `<div class="site-icon__cycle" aria-hidden="true"></div>`;
       return;
     }
 
-    this.innerHTML = `
-      <img
-        class="site-icon__static"
-        alt=""
-        width="${pixels}"
-        height="${pixels}"
-        decoding="async"
-      />
-    `;
+    this.innerHTML = renderAssetImage({
+      src: '',
+      alt: '',
+      decoding: 'async',
+      class: 'site-icon__static',
+      fit: 'contain',
+    });
   }
 
   private activate(): void {
@@ -121,18 +117,20 @@ export class AlloysSiteIcon extends HTMLElement {
   }
 
   private mountStatic(): void {
-    const img = this.querySelector<HTMLImageElement>('.site-icon__static');
-    if (!img || img.dataset.loaded === 'true') return;
+    const host = this.querySelector<HTMLElement>('alloys-image.site-icon__static');
+    if (!host || host.dataset.loaded === 'true') return;
 
     const size = this.readSize();
-    img.loading = size === 'nav' ? 'eager' : 'lazy';
     if (size === 'nav') {
-      img.fetchPriority = 'high';
+      host.setAttribute('loading', 'eager');
+      host.setAttribute('fetchpriority', 'high');
+    } else {
+      host.setAttribute('loading', 'lazy');
     }
-    img.src = staticIconUrl(this.readStaticPixels());
-    img.dataset.loaded = 'true';
-    img.addEventListener('error', () => {
-      img.src = staticIconUrl(512);
+    host.setAttribute('src', staticIconUrl(this.readStaticPixels()));
+    host.dataset.loaded = 'true';
+    host.addEventListener('error', () => {
+      host.setAttribute('src', staticIconUrl(512));
     }, { once: true });
   }
 
@@ -140,35 +138,32 @@ export class AlloysSiteIcon extends HTMLElement {
     const host = this.querySelector<HTMLElement>('.site-icon__cycle');
     if (!host || host.childElementCount > 0) return;
 
-    const pixels = displayPixelsForSize(this.readSize());
-    host.innerHTML = HERO_ALLOY_FRAMES.map((alloy, index) => `
-      <img
-        class="site-icon__frame${index === 0 ? ' is-active' : ''}"
-        data-src="${heroFrameUrl(alloy)}"
-        width="${pixels}"
-        height="${pixels}"
-        alt=""
-        decoding="async"
-        ${index === 0 ? 'loading="eager"' : 'loading="lazy"'}
-      />
-    `).join('');
+    host.innerHTML = HERO_ALLOY_FRAMES.map((alloy, index) => renderAssetImage({
+      src: index === 0 ? heroFrameUrl(alloy) : '',
+      dataSrc: index === 0 ? undefined : heroFrameUrl(alloy),
+      alt: '',
+      decoding: 'async',
+      loading: index === 0 ? 'eager' : 'lazy',
+      class: `site-icon__frame${index === 0 ? ' is-active' : ''}`,
+      fit: 'contain',
+    })).join('');
 
-    const frames = [...host.querySelectorAll<HTMLImageElement>('.site-icon__frame')];
-    const loadFrame = (frame: HTMLImageElement) => {
+    const frames = [...host.querySelectorAll<HTMLElement>('alloys-image.site-icon__frame')];
+    const loadFrame = (frame: HTMLElement) => {
       if (frame.dataset.loaded === 'true') return;
-      const src = frame.dataset.src;
+      const src = frame.getAttribute('data-src');
       if (!src) return;
-      frame.src = src;
+      frame.setAttribute('src', src);
       frame.dataset.loaded = 'true';
       frame.removeAttribute('data-src');
     };
 
     frames.forEach((frame, index) => {
       if (index === 0) {
-        loadFrame(frame);
+        frame.dataset.loaded = 'true';
       }
       frame.addEventListener('error', () => {
-        frame.src = staticIconUrl(512);
+        frame.setAttribute('src', staticIconUrl(512));
       }, { once: true });
     });
 
@@ -186,7 +181,7 @@ export class AlloysSiteIcon extends HTMLElement {
   private startCycle(): void {
     if (this.readVariant() !== 'cycle') return;
 
-    const frames = this.querySelectorAll<HTMLImageElement>('.site-icon__frame');
+    const frames = this.querySelectorAll('alloys-image.site-icon__frame');
     if (frames.length < 2 || this.#cycleTimer !== undefined) return;
 
     this.#cycleTimer = window.setInterval(() => this.advanceFrame(frames), HERO_FRAME_MS);
@@ -199,16 +194,16 @@ export class AlloysSiteIcon extends HTMLElement {
     this.#frameTransition = false;
   }
 
-  private advanceFrame(frames: NodeListOf<HTMLImageElement>): void {
+  private advanceFrame(frames: NodeListOf<Element>): void {
     if (frames.length < 2 || this.#frameTransition) return;
 
-    const current = frames[this.#frameIndex];
+    const current = frames[this.#frameIndex] as HTMLElement;
     const nextIndex = (this.#frameIndex + 1) % frames.length;
-    const next = frames[nextIndex];
+    const next = frames[nextIndex] as HTMLElement;
 
-    const nextSrc = next.dataset.src;
+    const nextSrc = next.getAttribute('data-src');
     if (nextSrc && next.dataset.loaded !== 'true') {
-      next.src = nextSrc;
+      next.setAttribute('src', nextSrc);
       next.dataset.loaded = 'true';
       next.removeAttribute('data-src');
     }

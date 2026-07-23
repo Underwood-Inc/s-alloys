@@ -56,6 +56,7 @@ test('[FR-010] recipeSelectionFromModelId maps ingot fragment and gear ids', () 
 
 test('[FR-010] recipeSelectionFromIcon parses public asset paths', () => {
   expect(recipeSelectionFromIcon('/base/guide/ingots/tin.png')).toEqual({ alloyId: 'tin', tab: 'ingot' });
+  expect(recipeSelectionFromIcon('/base/guide/ingots/tin.png?v=abc123')).toEqual({ alloyId: 'tin', tab: 'ingot' });
   expect(recipeSelectionFromIcon('/base/guide/fragments/mythril.png')).toEqual({ alloyId: 'mythril', tab: 'fragment' });
   expect(recipeSelectionFromIcon('/base/guide/gear/adamantine_sword.png')).toEqual({
     alloyId: 'adamantine',

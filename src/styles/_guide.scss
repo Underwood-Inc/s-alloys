@@ -8,6 +8,12 @@
     calc(var(--space-page-y) + var(--space-section));
 }
 
+@media (max-width: 480px) {
+  .guide-view {
+    padding-inline: 1rem;
+  }
+}
+
 .guide-view--article {
   padding-top: var(--space-block);
   padding-bottom: var(--space-page-y);
@@ -60,19 +66,27 @@
   color: inherit;
   cursor: pointer;
 
-  img {
+  alloys-image {
     display: block;
     width: clamp(10rem, 20vw, 15rem);
     height: clamp(10rem, 20vw, 15rem);
-    object-fit: contain;
     margin-bottom: 0.5rem;
+  }
+
+  img,
+  .asset-image__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     image-rendering: auto;
     filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.45));
     transition: transform 180ms var(--ease), filter 180ms var(--ease);
   }
 
-  &:hover img,
-  &:focus-visible img {
+  &:hover alloys-image,
+  &:focus-visible alloys-image,
+  &:hover .asset-image__img,
+  &:focus-visible .asset-image__img {
     transform: translateY(-6px) scale(1.06);
     filter:
       drop-shadow(0 16px 36px rgba(0, 0, 0, 0.5))
@@ -118,8 +132,9 @@
 .guide-view__back {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: var(--font-minecraft-sm);
+  gap: 0.4rem;
+  font-size: var(--font-minecraft-md);
+  line-height: 1.35;
   color: var(--muted);
   transition: color 160ms var(--ease);
   flex-shrink: 0;
@@ -127,6 +142,14 @@
   &:hover {
     color: var(--accent-light);
   }
+}
+
+.guide-view__back-arrow {
+  font-size: 1.35em;
+  line-height: 1;
+  font-family: var(--font);
+  font-weight: 600;
+  transform: translateY(-0.04em);
 }
 
 .guide-view--article .guide-view__header {
@@ -145,14 +168,21 @@
   line-height: 1.4;
 }
 
-.guide-view--article .guide-view__summary {
-  margin: 0;
+.guide-view--article .guide-view__lede {
+  margin: 0 0 0.65rem;
   font-size: 1.0625rem;
   line-height: 1.65;
 }
 
+.guide-view--article .guide-view__summary {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
 .guide-view--article .guide-view__body {
-  padding: var(--space-block) var(--space-gap);
+  padding: var(--space-gap);
 }
 
 .guide-view__header {
@@ -195,10 +225,10 @@
   line-height: 1.85;
 
   h2 {
-    margin-top: var(--space-block);
+    margin: var(--space-block) 0 var(--space-gap);
   }
 
-  h2:first-child {
+  h2:first-of-type {
     margin-top: 0;
   }
 

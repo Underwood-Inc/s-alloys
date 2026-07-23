@@ -15,7 +15,7 @@ const LEAK_TERMS = [
  */
 test('[FR-007] guide articles avoid internal implementation terms', () => {
   for (const article of GUIDE_ARTICLES) {
-    const blob = `${article.title} ${article.summary} ${article.body}`.toLowerCase();
+    const blob = `${article.title} ${article.lede ?? ''} ${article.summary ?? ''} ${article.body}`.toLowerCase();
     for (const term of LEAK_TERMS) {
       expect(blob.includes(term.toLowerCase())).toBe(false);
     }

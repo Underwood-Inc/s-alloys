@@ -3,7 +3,9 @@ import { ALLOY_CATALOG } from '../../molecules/recipe-catalog/index.js';
 export interface GuideArticle {
   slug: string;
   title: string;
-  summary: string;
+  /** Optional article-header intro shown above `summary` on the chapter page. */
+  lede?: string;
+  summary?: string;
   cardImage: string;
   body: string;
 }
@@ -48,17 +50,23 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
   {
     slug: 'alloys',
     title: 'The ten alloys',
-    summary: 'How each metal is found, crafted, or mined — with every recipe.',
+    lede: 'Alloys adds ten metals from early Tin through endgame Astral. Each has a full toolset and armor set with tier-appropriate stats.',
     cardImage: 'guide/chapters/alloys.png',
-    body: `
-      <p>Alloys adds ten metals from early Tin through endgame Astral. Each has a full toolset and armor set with tier-appropriate stats.</p>
-      <h2>Recipe explorer</h2>
+    body: `<h2>Recipe explorer</h2>
       <p>Pick an ingot, then browse ingot crafts, fragment combines, and every gear recipe — the same layouts as vanilla, with alloy ingots in place of iron or gold.</p>
       {{recipe-explorer}}
       <h2>Fragments</h2>
       <p>Four alloys can drop matching fragments while you break vanilla ore blocks. Nine fragments of the same type combine into one ingot in a crafting grid. Fragments cannot be smelted.</p>
       {{fragment-showcase}}
       <p>Every fragment alloy also has a shaped crafting recipe using common overworld materials, so you are never hard-locked to RNG.</p>
+      <h2>Gear effects</h2>
+      <p>Hover any gear icon in the recipe explorer for full stats. Crafted alloy gear includes three layers of bonuses:</p>
+      <ul>
+        <li><strong>Intrinsic enchants</strong> — real enchantments baked into the item (Unbreaking, Fortune, Piercing, and so on). They stack with table, book, and anvil enchants and cannot be stripped at a grindstone.</li>
+        <li><strong>Passive traits</strong> — potion effects or attribute bonuses while you wear or hold the matching piece (for example Steel boots grant Slow Falling, Nickel leggings grant Absorption).</li>
+        <li><strong>Signature projectiles</strong> — some bows and crossbows add a special arrow or bolt effect (Silver spectral, Nickel poison, Cobalt slowness bolts, Mythril flaming bolts, and others). The yellow projectile line on the tooltip shows the alloy bonus. If you load your own tipped arrows, both effects apply — for example a healing arrow from a Nickel bow inflicts poison and healing on hit.</li>
+      </ul>
+      <p>Tin and Bronze are stat-only metals with no passive potion effects. Higher tiers mix slot-specific intrinsics with stronger passives.</p>
     `,
   },
   {
@@ -68,6 +76,7 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     cardImage: 'guide/chapters/crafting.png',
     body: `
       <p>Alloy gear uses the <strong>same crafting layouts as vanilla</strong> tools and armor. Swap metal ingots for alloy ingots in those patterns.</p>
+      <p>Crafted results show tier lore, slot stats, intrinsic enchants, passive trait lines, and (on bows/crossbows) a signature projectile type when applicable.</p>
       <h2>Happy path</h2>
       <ul>
         <li>Place real alloy ingots in a standard pickaxe, sword, helmet, or other gear pattern.</li>

@@ -2,6 +2,7 @@ import { copyFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { assetManifestPlugin } from './tools/asset-manifest-plugin.mjs';
 
 /** GitHub Pages serves 404.html for unknown paths — copy index so SPA routes work. */
 function spa404(): Plugin {
@@ -16,7 +17,13 @@ function spa404(): Plugin {
 
 export default defineConfig({
   base: '/s-alloys/',
+  test: {
+    env: {
+      BASE_URL: '/s-alloys/',
+    },
+  },
   plugins: [
+    assetManifestPlugin(),
     spa404(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -44,6 +51,20 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,gif,json,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => /\/guide\/|\/icons\//.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'alloys-versioned-assets',
+              expiration: {
+                maxEntries: 600,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

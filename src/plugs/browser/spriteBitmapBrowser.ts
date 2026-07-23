@@ -1,6 +1,11 @@
 import type { SpriteBitmap, SpriteBitmapLoader } from '../../molecules/sprite-extrusion/types.js';
 
 const ALPHA_CUTOFF = 160;
+const spriteCache = new Map<string, Promise<SpriteBitmap>>();
+
+export function clearSpriteBitmapCache(): void {
+  spriteCache.clear();
+}
 
 export function binarizeSpriteAlpha(sprite: SpriteBitmap, cutoff = ALPHA_CUTOFF): SpriteBitmap {
   const data = new Uint8ClampedArray(sprite.data);
@@ -11,6 +16,18 @@ export function binarizeSpriteAlpha(sprite: SpriteBitmap, cutoff = ALPHA_CUTOFF)
 }
 
 export async function loadSpriteImageData(url: string): Promise<SpriteBitmap> {
+  const cached = spriteCache.get(url);
+  if (cached) return cached;
+
+  const promise = loadSpriteImageDataImpl(url);
+  spriteCache.set(url, promise);
+  promise.catch(() => {
+    spriteCache.delete(url);
+  });
+  return promise;
+}
+
+async function loadSpriteImageDataImpl(url: string): Promise<SpriteBitmap> {
   const image = new Image();
   image.decoding = 'async';
   image.crossOrigin = 'anonymous';

@@ -11,6 +11,11 @@ export interface TooltipLayer {
 let nextLayerId = 1;
 const stack: TooltipLayer[] = [];
 const childClosedListeners = new Set<(parentId: number) => void>();
+const forceClosedListeners = new Set<(layerId: number) => void>();
+
+function notifyForceClosed(layerId: number): void {
+  forceClosedListeners.forEach((listener) => listener(layerId));
+}
 
 function findParentLayer(anchor: HTMLElement): TooltipLayer | undefined {
   return [...stack].reverse().find(
@@ -18,10 +23,36 @@ function findParentLayer(anchor: HTMLElement): TooltipLayer | undefined {
   );
 }
 
+function closeSiblingChildren(parentId: number): void {
+  for (const entry of [...stack]) {
+    if (entry.parentId === parentId) {
+      forceCloseTooltipLayer(entry.id);
+    }
+  }
+}
+
+export function subscribeTooltipLayerForceClosed(listener: (layerId: number) => void): () => void {
+  forceClosedListeners.add(listener);
+  return () => forceClosedListeners.delete(listener);
+}
+
+export function forceCloseAllTooltipLayers(): void {
+  while (stack.length > 0) {
+    forceCloseTooltipLayer(stack[0].id);
+  }
+}
+
 export function openTooltipLayer(
   layer: Omit<TooltipLayer, 'id' | 'parentId'>,
 ): number {
   const parent = findParentLayer(layer.anchor);
+
+  if (!parent) {
+    forceCloseAllTooltipLayers();
+  } else {
+    closeSiblingChildren(parent.id);
+  }
+
   const entry: TooltipLayer = {
     ...layer,
     id: nextLayerId++,
@@ -69,6 +100,8 @@ export function forceCloseTooltipLayer(id: number): void {
   if (parentId !== undefined) {
     childClosedListeners.forEach((listener) => listener(parentId));
   }
+
+  notifyForceClosed(id);
 }
 
 export function resetTooltipLayerStack(): void {

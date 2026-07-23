@@ -2,6 +2,8 @@ import {
   ALLOY_PLAYER_META,
   fragmentTabLore,
   gearResultLore,
+  ingotIntrinsicOverviewLines,
+  ingotPassiveOverviewLines,
   ingotResultLore,
   tierLoreLine,
   vanillaIngredientLore,
@@ -9,7 +11,7 @@ import {
 import { FRAGMENT_DROP_META } from '../recipe-catalog/fragmentDropCatalog.js';
 import { ingredient, type IngredientId } from '../recipe-catalog/ingredients.js';
 import { ingredientSourceLabel } from '../recipe-catalog/ingredientAcquisitionCatalog.js';
-import type { GearKind } from '../recipe-catalog/gearLayouts.js';
+import { GEAR_LAYOUTS, type GearKind } from '../recipe-catalog/gearLayouts.js';
 import type { GameTooltipData, TooltipLine, TooltipOreSource, TooltipRarity } from './types.js';
 
 function rarityForAlloy(alloyId: string): TooltipRarity {
@@ -34,6 +36,10 @@ function loreStringsToLines(lore: string[]): TooltipLine[] {
       continue;
     }
     if (text.startsWith('While ')) {
+      lines.push({ kind: 'passive', text });
+      continue;
+    }
+    if (text.startsWith('Arrows:') || text.startsWith('Bolts:')) {
       lines.push({ kind: 'passive', text });
       continue;
     }
@@ -66,13 +72,32 @@ function loreStringsToLines(lore: string[]): TooltipLine[] {
   return lines;
 }
 
+function ingotGearLabel(gear: GearKind): string {
+  return GEAR_LAYOUTS.find((layout) => layout.id === gear)?.label.toLowerCase() ?? gear;
+}
+
+function buildIngotOverviewLines(alloyId: string): TooltipLine[] {
+  const lines = loreStringsToLines(ingotResultLore(alloyId));
+
+  for (const group of ingotIntrinsicOverviewLines(alloyId)) {
+    const label = group.gears.map(ingotGearLabel).join(' / ');
+    lines.push({ kind: 'enchant', text: `${label}: ${group.text}` });
+  }
+
+  for (const entry of ingotPassiveOverviewLines(alloyId)) {
+    lines.push({ kind: 'passive', text: `${ingotGearLabel(entry.gear)}: ${entry.text}` });
+  }
+
+  return lines;
+}
+
 export function buildIngotTooltip(alloyId: string, alloyName: string, icon: string): GameTooltipData {
   return {
     title: `${alloyName} Ingot`,
     icon,
     rarity: rarityForAlloy(alloyId),
     modelId: `ingot:${alloyId}`,
-    lines: loreStringsToLines(ingotResultLore(alloyId)),
+    lines: buildIngotOverviewLines(alloyId),
   };
 }
 

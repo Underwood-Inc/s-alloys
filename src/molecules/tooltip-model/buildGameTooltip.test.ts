@@ -34,6 +34,35 @@ test('[FR-008] gear tooltip surfaces stat and intrinsic enchant lines', () => {
   expect(tooltip.lines.some((line) => line.kind === 'enchant' && line.text.includes('Fortune'))).toBe(true);
 });
 
+test('[FR-008] silver bow tooltip includes spectral projectile line', () => {
+  const tooltip = buildGearTooltip('silver', 'Silver', 'bow', 'Bow', '/bow.png');
+
+  expect(tooltip.lines.some((line) => line.text === 'Arrows: Spectral')).toBe(true);
+  expect(tooltip.lines.some((line) => line.kind === 'enchant' && line.text.includes('Power'))).toBe(true);
+});
+
+test('[FR-008] nickel ingot tooltip lists per-slot intrinsics passives and projectiles', () => {
+  const tooltip = buildIngotTooltip('nickel', 'Nickel', '/icons/nickel.png');
+
+  expect(tooltip.lines.some((line) => line.kind === 'enchant' && line.text.includes('pickaxe') && line.text.includes('Fortune'))).toBe(true);
+  expect(tooltip.lines.some((line) => line.kind === 'enchant' && line.text.includes('bow') && line.text.includes('Power'))).toBe(true);
+  expect(tooltip.lines.some((line) => line.kind === 'passive' && line.text.includes('leggings') && line.text.includes('Absorption'))).toBe(true);
+  expect(tooltip.lines.some((line) => line.kind === 'passive' && line.text.includes('bow') && line.text.includes('Poison'))).toBe(true);
+});
+
+test('[FR-008] steel ingot tooltip lists crossbow multishot and boot slow falling', () => {
+  const tooltip = buildIngotTooltip('steel', 'Steel', '/icons/steel.png');
+
+  expect(tooltip.lines.some((line) => line.kind === 'enchant' && line.text.includes('crossbow') && line.text.includes('Multishot'))).toBe(true);
+  expect(tooltip.lines.some((line) => line.kind === 'passive' && line.text.includes('boots') && line.text.includes('Slow falling'))).toBe(true);
+});
+
+test('[FR-008] steel boots tooltip includes slow falling passive', () => {
+  const tooltip = buildGearTooltip('steel', 'Steel', 'boots', 'Boots', '/boots.png');
+
+  expect(tooltip.lines.some((line) => line.text.includes('Slow falling'))).toBe(true);
+});
+
 test('[FR-008] rare tier uses cyan title and border palette', () => {
   const style = rarityStyle('rare');
   expect(style.titleColor).toBe('#55ffff');

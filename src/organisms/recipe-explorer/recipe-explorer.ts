@@ -1,5 +1,8 @@
 import { defineAlloysElement, escapeHtml } from '../../atoms/dom/defineElement.js';
+import { highlightSearchText } from '../../atoms/highlightSearchText.js';
+import { renderAssetImage } from '../../atoms/asset-image/renderAssetImage.js';
 import { hideGameTooltip, showGameTooltip } from '../../atoms/tooltip/dispatchTooltip.js';
+import { assetUrl } from '../../lib/assetUrl.js';
 import {
   ALLOY_CATALOG,
   buildRecipeForTab,
@@ -12,6 +15,8 @@ import {
   recipeSelectionFromQuery,
   syncRecipeExplorerUrl,
 } from '../../molecules/recipe-explorer/openRecipeExplorer.js';
+import { resolveRecipeExplorerSearch } from '../../molecules/recipe-search/filterRecipeExplorer.js';
+import { setActiveRecipeSearchQuery } from '../../molecules/recipe-search/activeRecipeSearchQuery.js';
 import {
   selectionPreviewIcon,
   selectionSubtitle,
@@ -27,7 +32,9 @@ import '../item-preview/item-preview.js';
 export class RecipeExplorer extends HTMLElement {
   private alloyId = ALLOY_CATALOG[0]?.id ?? 'tin';
   private tab: RecipeTabId = 'ingot';
+  private searchQuery = '';
   private shellReady = false;
+  private searchDebounce?: ReturnType<typeof setTimeout>;
 
   static get observedAttributes() {
     return ['asset-base', 'initial-alloy', 'initial-tab'];
@@ -56,6 +63,10 @@ export class RecipeExplorer extends HTMLElement {
     }
   }
 
+  disconnectedCallback() {
+    if (this.searchDebounce) clearTimeout(this.searchDebounce);
+  }
+
   private assetBase(): string {
     const base = this.getAttribute('asset-base') ?? '/';
     return base.endsWith('/') ? base : `${base}/`;
@@ -74,6 +85,24 @@ export class RecipeExplorer extends HTMLElement {
       </header>
 
       <div class="recipe-explorer__picker">
+        <div class="recipe-explorer__search">
+          <label class="recipe-explorer__search-label">
+            <span class="recipe-explorer__search-sr">Search recipes</span>
+            <input
+              type="search"
+              class="recipe-explorer__search-input"
+              placeholder="Search recipes, effects, materials…"
+              autocomplete="off"
+              spellcheck="false"
+              aria-describedby="recipe-explorer-search-hint"
+            />
+          </label>
+          <p id="recipe-explorer-search-hint" class="recipe-explorer__search-hint">
+            Words combine with AND · <code>|</code> for OR · quotes for exact phrases · <code>pick*</code> prefix
+          </p>
+          <p class="recipe-explorer__search-stats" aria-live="polite" hidden></p>
+        </div>
+
         <div class="recipe-explorer__row recipe-explorer__row--ingots" role="group" aria-label="Choose alloy"></div>
 
         <div class="recipe-explorer__preview" aria-live="polite">
@@ -115,6 +144,20 @@ export class RecipeExplorer extends HTMLElement {
       syncRecipeExplorerUrl({ alloyId: this.alloyId, tab: this.tab });
     });
 
+    const searchInput = this.querySelector<HTMLInputElement>('.recipe-explorer__search-input');
+    searchInput?.addEventListener('input', () => {
+      if (this.searchDebounce) clearTimeout(this.searchDebounce);
+      this.searchDebounce = setTimeout(() => {
+        this.searchQuery = searchInput.value;
+        this.refresh();
+      }, 180);
+    });
+    searchInput?.addEventListener('search', () => {
+      if (this.searchDebounce) clearTimeout(this.searchDebounce);
+      this.searchQuery = searchInput.value;
+      this.refresh();
+    });
+
     this.shellReady = true;
   }
 
@@ -127,19 +170,20 @@ export class RecipeExplorer extends HTMLElement {
       if (!id) return;
       const entry = ALLOY_CATALOG.find((row) => row.id === id);
       if (!entry) return;
-      const icon = `${baseUrl}guide/ingots/${id}.png`;
+      const icon = assetUrl(`guide/ingots/${id}.png`, baseUrl);
       const tooltip = selectionTooltip(entry, 'ingot', baseUrl);
       tooltip.icon = icon;
       tooltip.title = `${entry.name} Ingot`;
 
-      const open = () => showGameTooltip(element, tooltip);
+      const openHover = () => showGameTooltip(element, tooltip, 'hover');
+      const openFocus = () => showGameTooltip(element, tooltip, 'focus');
       const close = () => hideGameTooltip(element);
       const navigate = (event: MouseEvent) => {
         if (event.defaultPrevented) return;
         openRecipeExplorer({ alloyId: id, tab: 'ingot' });
       };
-      element.onmouseenter = open;
-      element.onfocus = open;
+      element.onmouseenter = openHover;
+      element.onfocus = openFocus;
       element.onmouseleave = close;
       element.onblur = close;
       element.onclick = navigate;
@@ -149,14 +193,15 @@ export class RecipeExplorer extends HTMLElement {
       const tabId = element.dataset.tabId as RecipeTabId | undefined;
       if (!tabId) return;
       const tooltip = selectionTooltip(alloy, tabId, baseUrl);
-      const open = () => showGameTooltip(element, tooltip);
+      const openHover = () => showGameTooltip(element, tooltip, 'hover');
+      const openFocus = () => showGameTooltip(element, tooltip, 'focus');
       const close = () => hideGameTooltip(element);
       const navigate = (event: MouseEvent) => {
         if (event.defaultPrevented) return;
         openRecipeExplorer({ alloyId: alloy.id, tab: tabId });
       };
-      element.onmouseenter = open;
-      element.onfocus = open;
+      element.onmouseenter = openHover;
+      element.onfocus = openFocus;
       element.onmouseleave = close;
       element.onblur = close;
       element.onclick = navigate;
@@ -165,17 +210,45 @@ export class RecipeExplorer extends HTMLElement {
 
   private refresh() {
     const baseUrl = this.assetBase();
+    setActiveRecipeSearchQuery(this.searchQuery);
+    const search = resolveRecipeExplorerSearch(this.searchQuery, {
+      alloyId: this.alloyId,
+      tab: this.tab,
+    });
+    this.alloyId = search.selection.alloyId;
+    this.tab = search.selection.tab;
+
     const alloy = this.currentAlloy();
     const tabs = recipeTabsForAlloy(alloy);
     if (!tabs.includes(this.tab)) this.tab = tabs[0];
     const recipe = buildRecipeForTab(alloy, this.tab, baseUrl);
     const navTiles = recipeNavTiles(tabs, baseUrl, alloy.id);
 
+    const searchInput = this.querySelector<HTMLInputElement>('.recipe-explorer__search-input');
+    if (searchInput && searchInput.value !== this.searchQuery) {
+      searchInput.value = this.searchQuery;
+    }
+
+    const searchStats = this.querySelector<HTMLElement>('.recipe-explorer__search-stats');
+    if (searchStats) {
+      if (search.hasQuery) {
+        const noun = search.matchCount === 1 ? 'match' : 'matches';
+        searchStats.textContent = search.matchCount === 0
+          ? 'No recipes match that search.'
+          : `${search.matchCount} recipe ${noun}`;
+        searchStats.hidden = false;
+      } else {
+        searchStats.textContent = '';
+        searchStats.hidden = true;
+      }
+    }
+
     const ingotRow = this.querySelector('.recipe-explorer__row--ingots');
     if (ingotRow) {
       ingotRow.innerHTML = ALLOY_CATALOG.map((entry) => {
+        if (!search.visibleAlloyIds.has(entry.id)) return '';
         const active = entry.id === this.alloyId;
-        const icon = `${baseUrl}guide/ingots/${entry.id}.png`;
+        const icon = assetUrl(`guide/ingots/${entry.id}.png`, baseUrl);
         return `
           <button
             type="button"
@@ -184,15 +257,23 @@ export class RecipeExplorer extends HTMLElement {
             aria-pressed="${active}"
             aria-label="${escapeHtml(entry.name)}"
           >
-            <img src="${escapeHtml(icon)}" alt="" width="40" height="40" loading="lazy" />
+            ${renderAssetImage({
+              src: icon,
+              alt: '',
+              loading: 'lazy',
+              fit: 'contain',
+            })}
           </button>
         `;
       }).join('');
     }
 
+    const highlight = this.searchQuery.trim();
+
     const kindRow = this.querySelector('.recipe-explorer__row--kinds');
     if (kindRow) {
       kindRow.innerHTML = navTiles.map((tile) => {
+        if (!search.visibleTabIds.has(tile.id)) return '';
         const active = tile.id === this.tab;
         return `
           <button
@@ -203,8 +284,13 @@ export class RecipeExplorer extends HTMLElement {
             data-tab-id="${escapeHtml(tile.id)}"
             aria-label="${escapeHtml(tile.label)}"
           >
-            <img src="${escapeHtml(tile.icon)}" alt="" width="36" height="36" loading="lazy" />
-            <span class="recipe-explorer__kind-label">${escapeHtml(tile.label)}</span>
+            ${renderAssetImage({
+              src: tile.icon,
+              alt: '',
+              loading: 'lazy',
+              fit: 'contain',
+            })}
+            <span class="recipe-explorer__kind-label">${highlight ? highlightSearchText(tile.label, highlight) : escapeHtml(tile.label)}</span>
           </button>
         `;
       }).join('');
@@ -225,10 +311,18 @@ export class RecipeExplorer extends HTMLElement {
     }
 
     const previewTitle = this.querySelector('.recipe-explorer__preview-title');
-    if (previewTitle) previewTitle.textContent = selectionTitle(alloy, this.tab);
+    if (previewTitle) {
+      previewTitle.innerHTML = highlight
+        ? highlightSearchText(selectionTitle(alloy, this.tab), highlight)
+        : escapeHtml(selectionTitle(alloy, this.tab));
+    }
 
     const previewSub = this.querySelector('.recipe-explorer__preview-sub');
-    if (previewSub) previewSub.textContent = selectionSubtitle(alloy, this.tab);
+    if (previewSub) {
+      previewSub.innerHTML = highlight
+        ? highlightSearchText(selectionSubtitle(alloy, this.tab), highlight)
+        : escapeHtml(selectionSubtitle(alloy, this.tab));
+    }
 
     const gridWrap = this.querySelector('.recipe-explorer__grid-wrap');
     if (gridWrap) gridWrap.setAttribute('aria-label', recipe.title);

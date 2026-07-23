@@ -9,6 +9,8 @@ export interface ProjectedFace {
   points: [Vec2, Vec2, Vec2, Vec2];
 }
 
+const projectedScratch: ProjectedFace[] = [];
+
 function averageZ(corners: Vec3[]): number {
   return corners.reduce((sum, corner) => sum + corner.z, 0) / corners.length;
 }
@@ -23,22 +25,41 @@ function snap(value: number): number {
   return Math.round(value * 2) / 2;
 }
 
-export function projectExtrusionFaces(
+function fillProjectedFaces(
   model: ExtrusionModel,
   options: RenderExtrusionOptions,
-): ProjectedFace[] {
+  out: ProjectedFace[],
+): void {
   const padding = options.padding ?? 4;
   const scale = layoutScale(model, options.width, options.height, padding);
   const offset = { x: options.width / 2, y: options.height / 2 };
+  out.length = 0;
 
-  return model.faces.map((face) => {
+  for (const face of model.faces) {
     const rotated = face.corners.map((corner) => rotateY(corner, options.yaw)) as [Vec3, Vec3, Vec3, Vec3];
     const points = rotated.map((corner) => ({
       x: snap(projectOrthographic(corner, scale, offset).x),
       y: snap(projectOrthographic(corner, scale, offset).y),
     })) as [Vec2, Vec2, Vec2, Vec2];
-    return { face, depth: averageZ(rotated), points };
-  });
+    out.push({ face, depth: averageZ(rotated), points });
+  }
+}
+
+export function projectExtrusionFaces(
+  model: ExtrusionModel,
+  options: RenderExtrusionOptions,
+): ProjectedFace[] {
+  fillProjectedFaces(model, options, projectedScratch);
+  return projectedScratch.map((entry) => ({
+    face: entry.face,
+    depth: entry.depth,
+    points: [
+      { x: entry.points[0].x, y: entry.points[0].y },
+      { x: entry.points[1].x, y: entry.points[1].y },
+      { x: entry.points[2].x, y: entry.points[2].y },
+      { x: entry.points[3].x, y: entry.points[3].y },
+    ] as [Vec2, Vec2, Vec2, Vec2],
+  }));
 }
 
 export function quadArea(points: [Vec2, Vec2, Vec2, Vec2]): number {
@@ -132,13 +153,14 @@ export function renderExtrusion(
   const centerX = options.width / 2;
   const centerY = options.height / 2;
   const cos = Math.cos(options.yaw);
-  const projected = projectExtrusionFaces(model, options).sort((a, b) => a.depth - b.depth);
+  fillProjectedFaces(model, options, projectedScratch);
+  projectedScratch.sort((a, b) => a.depth - b.depth);
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, options.width, options.height);
 
-  for (const entry of projected) {
+  for (const entry of projectedScratch) {
     if (entry.face.fill.kind !== 'color') continue;
     drawSolidQuad(ctx, entry.points, rgbaCss(entry.face.fill.color));
   }
