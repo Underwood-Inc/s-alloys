@@ -1,0 +1,9 @@
+.viewport-anchored-panel {
+  position: fixed;
+  z-index: 180;
+  pointer-events: auto;
+
+  &[hidden] {
+    display: none;
+  }
+}

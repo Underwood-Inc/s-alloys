@@ -1,0 +1,200 @@
+// Frame art (930×957 input, 872×868 result) drives cluster size.
+// Overlay insets + gap measured from crafting-panel-input.png cell wells.
+.crafting-grid {
+  --craft-input-width: min(100%, 18.5rem);
+  --craft-result-width: min(100%, 19.12rem);
+  --craft-input-inset: 16.67% 16.56% 16.67% 14.95%;
+  --craft-result-inset: 29%;
+  --craft-slot-gap: 6.6%;
+  --craft-icon-size: 88%;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.25rem 0 0.5rem;
+}
+
+.crafting-grid__surface {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.75rem, 2.5vw, 1.35rem);
+  width: min(100%, 40rem);
+}
+
+.crafting-grid__cluster {
+  position: relative;
+  width: var(--craft-cluster-width, var(--craft-input-width));
+}
+
+.crafting-grid__cluster--result {
+  --craft-cluster-width: var(--craft-result-width);
+}
+
+.crafting-grid__frame {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.crafting-grid__overlay {
+  position: absolute;
+  inset: var(--craft-overlay-inset, var(--craft-input-inset));
+  display: flex;
+}
+
+.crafting-grid__cluster--result .crafting-grid__overlay {
+  --craft-overlay-inset: var(--craft-result-inset);
+}
+
+.crafting-grid__slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: var(--craft-slot-gap);
+  width: 100%;
+  height: 100%;
+}
+
+.crafting-grid__slot,
+.crafting-grid__result {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  line-height: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  transition: filter 120ms var(--ease, ease);
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.crafting-grid__slot--navigable {
+  cursor: pointer;
+
+  &:hover img,
+  &:focus-visible img {
+    filter: drop-shadow(0 0 6px rgb(244 200 106 / 55%));
+  }
+}
+
+.crafting-grid__icon {
+  display: grid;
+  place-items: center;
+  width: var(--craft-icon-size);
+  height: var(--craft-icon-size);
+  pointer-events: none;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 4px rgb(0 0 0 / 45%));
+    transition: transform 120ms var(--ease, ease), filter 120ms var(--ease, ease);
+  }
+}
+
+.crafting-grid__slot:hover img,
+.crafting-grid__slot:focus-visible img,
+.crafting-grid__result:hover img,
+.crafting-grid__result:focus-visible img {
+  transform: scale(1.05);
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 45%)) brightness(1.1);
+}
+
+.crafting-grid__result .crafting-grid__icon img {
+  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 50%));
+}
+
+.crafting-grid__slot--empty {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.crafting-grid__arrow {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  filter: drop-shadow(0 0 10px rgb(244 200 106 / 25%));
+
+  img {
+    width: 100%;
+    height: auto;
+    image-rendering: auto;
+  }
+}
+
+.crafting-grid__caption {
+  margin: 0;
+  font-family: var(--font-minecraft-sm);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #a8a4b4);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.crafting-grid__fx {
+  position: absolute;
+  inset: 8% 10%;
+  width: 80%;
+  height: 72%;
+  object-fit: cover;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: screen;
+  border-radius: 1.25rem;
+  z-index: 0;
+}
+
+.crafting-grid__fx--css {
+  background:
+    radial-gradient(circle at 30% 40%, rgb(244 200 106 / 18%), transparent 55%),
+    radial-gradient(circle at 70% 60%, rgb(106 140 175 / 14%), transparent 50%);
+  animation: crafting-grid-shimmer 4.5s ease-in-out infinite;
+}
+
+@keyframes crafting-grid-shimmer {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(1.02);
+  }
+}
+
+.crafting-grid__empty {
+  margin: 0;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary, #a8a4b4);
+  font-family: var(--font-minecraft-sm);
+}

@@ -1,0 +1,1 @@
+export const VIEWPORT_TOOLTIP_HIDE_DELAY_MS = 280;

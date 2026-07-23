@@ -1,0 +1,42 @@
+version: 1
+requirements:
+  - id: FR-001
+    kind: functional
+    title: CSV export encodes QA progress
+    summary: Export produces metadata rows and one row per case with verdict and notes.
+  - id: FR-002
+    kind: functional
+    title: CSV import merges by case id
+    summary: Import updates only known case ids and preserves tester name metadata.
+  - id: FR-003
+    kind: functional
+    title: QA session persists through storage port
+    summary: Session store loads and saves tester name, selection, and per-case progress.
+  - id: FR-004
+    kind: functional
+    title: QA filter narrows visible cases
+    summary: Filter matches suite, alloy, verdict, and search text.
+  - id: FR-005
+    kind: functional
+    title: Progress summary counts reviewed cases
+    summary: Reviewed count includes pass, fail, and skip verdicts only.
+  - id: FR-006
+    kind: functional
+    title: Router resolves public routes
+    summary: Router maps paths under the site base to home, qa, and guide views.
+  - id: FR-007
+    kind: functional
+    title: Guide catalog exposes player-facing articles only
+    summary: Guide articles contain install and gameplay help without internal implementation terms.
+  - id: FR-008
+    kind: functional
+    title: Game tooltips use canon alloy lore
+    summary: Tooltip builder emits tier, craft note, stats, intrinsics, and passives from alloyPlayerLore with rarity styling.
+  - id: FR-009
+    kind: functional
+    title: Crafting grid tooltips cover every slot and result
+    summary: Slot index 9 always maps to the recipe result; tooltip host shows on hover and focus for all interactive slots.
+  - id: FR-010
+    kind: functional
+    title: Recipe category rail uses image navigation
+    summary: Recipe explorer category picker renders image tiles from the nav catalog instead of text pills.
